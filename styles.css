@@ -87,6 +87,159 @@ body{
 .album-count{ font-size:11px; color:var(--parchment-dim); margin-top:2px; }
 .album-card.all-songs .album-name{ color:var(--gold); }
 
+.add-music-btn{
+  background:none;
+  border:1px solid rgba(201,169,97,.4);
+  color:var(--gold);
+  padding:8px 18px;
+  border-radius:20px;
+  font-family:var(--font-body);
+  font-size:12px;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:background .2s ease, color .2s ease;
+  align-self:flex-start;
+}
+.add-music-btn:hover{ background:rgba(201,169,97,.15); }
+.add-music-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+.song-row{ position:relative; }
+.song-row-delete{
+  flex-shrink:0;
+  background:none;
+  border:none;
+  color:var(--parchment-dim);
+  opacity:.5;
+  width:26px; height:26px;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:13px;
+  transition:opacity .2s ease, background .2s ease, color .2s ease;
+}
+.song-row-delete:hover{ opacity:1; color:var(--rose); background:rgba(255,255,255,0.06); }
+.song-row-delete:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+.upload-overlay{
+  position:fixed; inset:0; z-index:50;
+  background:rgba(10,8,7,.72);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.upload-panel{
+  width:100%; max-width:420px;
+  max-height:86vh; overflow-y:auto;
+  background:var(--ink-soft);
+  border-radius:16px;
+  padding:26px 26px 22px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,169,97,0.18);
+}
+.upload-panel-header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:6px;
+}
+.upload-panel-title{
+  font-family:var(--font-display); font-style:italic; font-weight:600;
+  font-size:22px; color:var(--parchment);
+}
+.upload-close-btn{
+  background:none; border:none; color:var(--parchment-dim);
+  font-size:15px; cursor:pointer; width:28px; height:28px; border-radius:50%;
+  transition:color .2s ease, background .2s ease;
+}
+.upload-close-btn:hover{ color:var(--parchment); background:rgba(255,255,255,0.06); }
+.upload-hint{
+  font-size:11.5px; color:var(--parchment-dim); opacity:.85;
+  margin-bottom:6px; line-height:1.5;
+}
+.upload-storage{
+  font-size:11px; color:var(--parchment-dim); opacity:.7;
+  margin-bottom:18px;
+}
+.upload-storage.warn{ color:var(--rose); opacity:1; }
+.upload-field{
+  display:flex; flex-direction:column; gap:6px;
+  margin-bottom:14px;
+  font-size:12px; letter-spacing:.04em;
+  color:var(--parchment-dim);
+}
+.upload-field input[type="text"]{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(201,169,97,.25);
+  color:var(--parchment);
+  font-family:var(--font-body);
+  font-size:14px;
+  padding:9px 11px;
+  border-radius:8px;
+}
+.upload-field input[type="text"]:focus{
+  outline:none; border-color:var(--gold);
+}
+.upload-field input[type="file"]{
+  color:var(--parchment-dim);
+  font-size:12.5px;
+}
+.upload-mode-tabs{ display:flex; gap:8px; margin-bottom:16px; }
+.upload-mode-btn{
+  flex:1;
+  background:none;
+  border:1px solid rgba(201,169,97,.25);
+  color:var(--parchment-dim);
+  padding:7px 10px;
+  border-radius:16px;
+  font-family:var(--font-body);
+  font-size:11.5px;
+  letter-spacing:.04em;
+  cursor:pointer;
+  transition:background .2s ease, color .2s ease, border-color .2s ease;
+}
+.upload-mode-btn:hover{ color:var(--parchment); }
+.upload-mode-btn.active{
+  background:rgba(201,169,97,.15);
+  color:var(--gold);
+  border-color:rgba(201,169,97,.5);
+}
+
+.upload-bulk-preview{
+  max-height:180px;
+  overflow-y:auto;
+  margin-bottom:14px;
+  border-radius:8px;
+  background:rgba(255,255,255,0.03);
+}
+.upload-bulk-row{
+  padding:8px 11px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.upload-bulk-row:last-child{ border-bottom:none; }
+.upload-bulk-title{
+  display:block; font-size:13px; color:var(--parchment);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.upload-bulk-sub{
+  display:block; font-size:11px; color:var(--parchment-dim); margin-top:2px;
+}
+
+.upload-progress{
+  font-size:11.5px; color:var(--parchment-dim); margin-right:auto; align-self:center;
+}
+
+.upload-actions{
+  display:flex; justify-content:flex-end; align-items:center; margin-top:20px;
+}
+.upload-save-btn{
+  background:var(--gold);
+  color:var(--ink);
+  border:none;
+  padding:10px 22px;
+  border-radius:20px;
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:background .2s ease;
+}
+.upload-save-btn:hover{ background:#dab975; }
+
 .library-tabs{ display:flex; gap:10px; margin-bottom:clamp(18px,2.4vw,28px); }
 .tab-btn{
   background:none;

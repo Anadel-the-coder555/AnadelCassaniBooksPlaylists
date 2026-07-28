@@ -9,61 +9,6 @@
   //         Second line here`
   //         Leave it as "" and the lyrics panel will just say "No lyrics added yet."
     const trackData = [
-        { audio: "bookSongs/Forgotten Beginning - Hey I Can't Dance!.mp3", image: "bookSongsCovers/HeyICan'tDance.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Converge - Collide.mp3", image: "bookSongsCovers/Converge.png", album: "Converge", lyrics: "" },
-        { audio: "bookSongs/Falling For The Dragon - Falling For The Dragon.mp3", image: "bookSongsCovers/Falling.png", album: "Falling For The Dragon", lyrics: "" },
-        { audio: "bookSongs/Talent Bones - Found In Me.mp3", image: "bookSongsCovers/FoundInMe.png", album: "Talent Bones", lyrics: "" },
-        { audio: "bookSongs/Matchmaker's Revenge - Matchmaker's Revenge.mp3", image: "bookSongsCovers/Matchmaker.png", album: "Matchmaker's Revenge", lyrics: "" },
-        { audio: "bookSongs/One Small Kiss.mp3", image: "bookSongsCovers/Blu.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Survivor.mp3", image: "bookSongsCovers/Survivor.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Wings.mp3", image: "bookSongsCovers/Wings.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Ο Χορός των Αστεριών.mp3", image: "bookSongsCovers/DanceOfTheStars.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Ooops I Did It Again.mp3", image: "bookSongsCovers/Oops.png", album: "Matchmaker's Revenge", lyrics: "" },
-        { audio: "bookSongs/I Remember.mp3", image: "bookSongsCovers/IRemember.png", album: "Gravity Thief", lyrics: "" },
-        { audio: "bookSongs/Wrong Way Up.mp3", image: "bookSongsCovers/WrongWayUp.png", album: "Gravity Thief", lyrics: "" },
-        { audio: "bookSongs/Blu - Dance of The Stars.mp3", image: "bookSongsCovers/DanceOfTheStars.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Resonance.mp3", image: "bookSongsCovers/Resonance.png", album: "Resonance", lyrics: "" },
-        { audio: "bookSongs/Shuttle 66.mp3", image: "bookSongsCovers/Shuttle66.png", album: "Stellar Hearts", lyrics: "" },
-        { audio: "bookSongs/Who Are You.mp3", image: "bookSongsCovers/WhoAreYou.png", album: "Stellar Hearts", lyrics: "" },
-        { audio: "bookSongs/Sunrise.mp3", image: "bookSongsCovers/Sunrise.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Blu - How To Say Goodbye.mp3", image: "bookSongsCovers/HowToSayGoodbye.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Eternal Dusk.mp3", image: "bookSongsCovers/EternalDusk.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Into The Light.mp3", image: "bookSongsCovers/IntoTheLight.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/The Light Was Always Me (Female Version).mp3", image: "bookSongsCovers/TheLightWasAlwaysMeFemale.png", album: "Gravity Thief", lyrics: "" },
-        { audio: "bookSongs/Gravity Thief - The Light Was Always Me.mp3", image: "bookSongsCovers/TheLightWasAlwaysMe.png", album: "Gravity Thief", lyrics: "" },
-        { audio: "bookSongs/Blu - Reaching Out.mp3", image: "bookSongsCovers/ReachingOut.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Blu - Here For You.mp3", image: "bookSongsCovers/HereForYou.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Blu - Descension.mp3", image: "bookSongsCovers/Descension.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Fern - Healed.mp3", image: "bookSongsCovers/Healed.png", album: "Fern", lyrics: "" },
-        { audio: "bookSongs/Forgotten Beginning - 춤을 못 춰요.mp3", image: "bookSongsCovers/HeyICan'tDance.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Converge - Small Things.mp3", image: "bookSongsCovers/SmallThings.png", album: "Converge", lyrics: "" },
-        { audio: "bookSongs/Will I Miss You.mp3", image: "bookSongsCovers/WillIMissYou.png", album: "Talent Bones", lyrics: "" },
-        { audio: "bookSongs/Nothing Like This.mp3", image: "bookSongsCovers/NothingLikeThis.png", album: "Forgotten Middle", lyrics: "" },
-        { audio: "bookSongs/Falling For The Dragon INSTRUMENTAL.mp3", image: "bookSongsCovers/Falling.png", album: ["Falling For The Dragon", "Instrumentals"], lyrics: "" },
-        { audio: "bookSongs/Πώς να πεις αντίο.mp3", image: "bookSongsCovers/HowToSayGoodbye.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/This Isn't All A dream.mp3", image: "bookSongsCovers/ThisIsn'tAllADream.png", album: "Intangible", lyrics: "" },
-        { audio: "bookSongs/Girl In The Green Dress.mp3", image: "bookSongsCovers/GirlInTheGreenDress.png", album: "Intangible", lyrics: "" },
-        { audio: "bookSongs/She's The Dawn.mp3", image: "bookSongsCovers/She'sTheDawn.png", album: "Intangible", lyrics: "" },
-        { audio: "bookSongs/Midnight.mp3", image: "bookSongsCovers/Midnight.png", album: "Blu", lyrics: "" },
-        { audio: "bookSongs/Bloom Through.mp3", image: "bookSongsCovers/BloomThrough.png", album: "Fern", lyrics: "" },
-        { audio: "bookSongs/Feel Again.mp3", image: "bookSongsCovers/FeelAgain.png", album: ["Intangible", "Instrumentals"], lyrics: "" },
-        { audio: "bookSongs/Spy.mp3", image: "bookSongsCovers/Spy.png", album: ["Intangible", "Instrumentals"], lyrics: "" },
-        { audio: "bookSongs/Under The Moonlight We're Free INSTRUMENTAL.mp3", image: "bookSongsCovers/UnderTheMoonlightWe'reFree.png", album: ["Intangible", "Instrumentals"], lyrics: "" },
-        { audio: "bookSongs/Slipping Away.mp3", image: "bookSongsCovers/SlippingAway.png", album: "Intangible", lyrics: "" },
-        { audio: "bookSongs/Under The Moonlight We're Free.mp3", image: "bookSongsCovers/UnderTheMoonlightWe'reFree.png", album: "Intangible", lyrics: "" },
-        { audio: "bookSongs/The Hardest Goodbye.mp3", image: "bookSongsCovers/TheHardestGoodbye.png", album: "Forgotten Beginning", lyrics: "" },
-        { audio: "bookSongs/Is There A Paradise INSTRUMENTAL.mp3", image: "bookSongsCovers/IsThereAParadise.png", album: ["Resonance", "Instrumentals"], lyrics: "" },
-        { audio: "bookSongs/New Day.mp3", image: "bookSongsCovers/NewDay.png", album: "Ion", lyrics: "" },
-        { audio: "bookSongs/Watch Her Fly.mp3", image: "bookSongsCovers/WatchHerFly.png", album: "Gravity Thief", lyrics: "" },
-        { audio: "bookSongs/Before You Met Me.mp3", image: "bookSongsCovers/BeforeYouMetMe.png", album: "Before We Were Strangers", lyrics: "" },
-        { audio: "bookSongs/Limitless.mp3", image: "bookSongsCovers/Limitless.png", album: "Beyond", lyrics: "" },
-        { audio: "bookSongs/Our Little Secret FEMALE VERSION.mp3", image: "bookSongsCovers/OurLittleSecret.png", album: "Matchmaker's Revenge", lyrics: "" },
-        { audio: "bookSongs/In The Air.mp3", image: "bookSongsCovers/InTheAirJAZZY..png", album: "Enzely", lyrics: "" },
-        { audio: "bookSongs/Flow.mp3", image: "bookSongsCovers/Flow.png", album: "Singles", lyrics: "" },
-        { audio: "bookSongs/Storm Rider.mp3", image: "bookSongsCovers/StormRider.png", album: "Storm Rider", lyrics: "" },
-        { audio: "bookSongs/She's Taking a Trip.mp3", image: "bookSongsCovers/She'sTakingATrip.png", album: "Justin Case", lyrics: "" },
-        { audio: "bookSongs/In The Air JAZZY.mp3", image: "bookSongsCovers/InTheAirJAZZY.png", album: "Enzely", lyrics: "" },
-        
   ];
 
   function parseFilename(url){
@@ -89,49 +34,55 @@
   // Albums grid. Leave it as "" (empty string) to keep the generated landscape art.
   // Same rules as track covers: local relative path (e.g. "bookSongsCovers/blu.png")
   // or a Dropbox ?dl=1 link. If an image fails to load, it falls back to generated art.
-  const albumCovers = {
-    "All Songs": "bookSongsCovers/All.png",
-    "Forgotten Middle": "bookSongsCovers/Survivor.png",
-    "Forgotten Beginning": "bookSongsCovers/ForgottenBeginning.png",
-    "Converge": "bookSongsCovers/Converge.png",
-    "Falling For The Dragon": "bookSongsCovers/Falling.png",
-    "Talent Bones": "bookSongsCovers/FoundInMe.png",
-    "Matchmaker's Revenge": "bookSongsCovers/Matchmaker.png",
-    "Blu": "bookSongsCovers/Blu.png",
-    "Resonance": "bookSongsCovers/Resonance.png",
-    "Stellar Hearts": "bookSongsCovers/WhoAreYou.png",
-    "Fern": "bookSongsCovers/Healed.png",
-    "Gravity Thief": "bookSongsCovers/TheLightWasAlwaysMe.png",
-    "Instrumentals": "bookSongsCovers/Instrumentals.png",
-    "Intangible": "bookSongsCovers/ThisIsn'tAllADream.png",
-    "Ion": "bookSongsCovers/NewDay.png"
-  };
+  const albumCovers = {};
 
-  const songs = trackData.map((t, i) => {
+  const baseSongs = trackData.map((t, i) => {
     const meta = parseFilename(t.audio);
-    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', lyrics: t.lyrics || '', title:meta.title, artist:meta.artist, dur:null };
+    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', lyrics: t.lyrics || '', title:meta.title, artist:meta.artist, dur:null, uploaded:false };
   });
 
   // Lyrics added through the app's own editor are saved in this browser and
   // take priority over anything hardcoded in trackData above.
   const LYRICS_KEY_PREFIX = 'aether-lyrics-';
-  songs.forEach(song => {
+  baseSongs.forEach(song => {
     try {
       const stored = localStorage.getItem(LYRICS_KEY_PREFIX + song.id);
       if (stored !== null) song.lyrics = stored;
     } catch(e){ /* localStorage unavailable — code defaults still work */ }
   });
 
+  // Songs added through the "Add Music" panel (see the Uploads section below)
+  // live only in this browser's IndexedDB and are merged in alongside the
+  // built-in trackData songs. Uploaded ids are stable strings ('up-<dbKey>')
+  // so removing one upload never shifts another's id.
+  let uploadedSongs = [];
+  let songs = baseSongs.slice();
+  let songsById = new Map();
+  let albumOrder = [];
+  let albumMap = new Map();
+
+  function getSong(id){ return songsById.get(id); }
+
   // group songs into albums, preserving first-appearance order
-  const albumOrder = [];
-  const albumMap = new Map();
-  songs.forEach(s => {
-  const albums = Array.isArray(s.album) ? s.album : [s.album];
-  albums.forEach(name => {
-    if (!albumMap.has(name)){ albumMap.set(name, []); albumOrder.push(name); }
-    albumMap.get(name).push(s.id);
-  });
-});
+  function rebuildAlbums(){
+    albumOrder = [];
+    albumMap = new Map();
+    songs.forEach(s => {
+      const albums = Array.isArray(s.album) ? s.album : [s.album];
+      albums.forEach(name => {
+        if (!albumMap.has(name)){ albumMap.set(name, []); albumOrder.push(name); }
+        albumMap.get(name).push(s.id);
+      });
+    });
+  }
+
+  function rebuildSongs(){
+    songs = baseSongs.concat(uploadedSongs);
+    songsById = new Map(songs.map(s => [s.id, s]));
+    rebuildAlbums();
+  }
+
+  rebuildSongs();
 
   const liked = new Set();
   const added = new Set();
@@ -157,6 +108,27 @@
   const lyricsEditActions = document.getElementById('lyricsEditActions');
   const lyricsSaveBtn = document.getElementById('lyricsSaveBtn');
   const lyricsCancelBtn = document.getElementById('lyricsCancelBtn');
+
+  const addMusicBtn = document.getElementById('addMusicBtn');
+  const uploadOverlay = document.getElementById('uploadOverlay');
+  const uploadCloseBtn = document.getElementById('uploadCloseBtn');
+  const uploadAudioInput = document.getElementById('uploadAudioInput');
+  const uploadImageInput = document.getElementById('uploadImageInput');
+  const uploadTitleInput = document.getElementById('uploadTitleInput');
+  const uploadArtistInput = document.getElementById('uploadArtistInput');
+  const uploadAlbumInput = document.getElementById('uploadAlbumInput');
+  const uploadSaveBtn = document.getElementById('uploadSaveBtn');
+  const albumSuggestions = document.getElementById('albumSuggestions');
+  const uploadStorageEl = document.getElementById('uploadStorageUsage');
+  const uploadModeOneBtn = document.getElementById('uploadModeOneBtn');
+  const uploadModeManyBtn = document.getElementById('uploadModeManyBtn');
+  const uploadOneFields = document.getElementById('uploadOneFields');
+  const uploadManyFields = document.getElementById('uploadManyFields');
+  const uploadBulkAudioInput = document.getElementById('uploadBulkAudioInput');
+  const uploadBulkImageInput = document.getElementById('uploadBulkImageInput');
+  const uploadBulkAlbumInput = document.getElementById('uploadBulkAlbumInput');
+  const uploadBulkPreview = document.getElementById('uploadBulkPreview');
+  const uploadProgress = document.getElementById('uploadProgress');
 
   const svg = document.getElementById('landscape');
   const landscapeImg = document.getElementById('landscapeImg');
@@ -250,7 +222,7 @@
   }
 
   function buildLandscape(songId){
-    svg.innerHTML = landscapeMarkup(songId, 'main');
+    svg.innerHTML = landscapeMarkup(hashStr(String(songId)), 'main');
   }
 
   function buildSkylineLayer(rnd, baseY, color, heightScale, widthScale){
@@ -304,18 +276,25 @@
           <div class="song-row-artist">${song.artist}</div>
         </div>
         <div class="song-row-album">${Array.isArray(song.album) ? song.album.join(' / ') : song.album}</div>
+        ${song.uploaded ? '<button class="song-row-delete" title="Remove from library" aria-label="Remove from library">✕</button>' : ''}
       `;
       const open = () => openSong(song.id);
       row.addEventListener('click', open);
       row.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+      if (song.uploaded){
+        row.querySelector('.song-row-delete').addEventListener('click', e => {
+          e.stopPropagation();
+          removeUpload(song);
+        });
+      }
       songListView.appendChild(row);
     });
   }
 
   function openSong(songId){
     queue = songs.map(s => s.id);
-    pos = songId;
-    renderVisual(songs[queue[pos]]);
+    pos = queue.indexOf(songId);
+    renderVisual(getSong(queue[pos]));
     loadCurrentTrack(false);
     renderAll();
     showPlayer();
@@ -378,7 +357,7 @@
   function openAlbum(ids){
     queue = ids.slice();
     pos = 0;
-    renderVisual(songs[queue[pos]]);
+    renderVisual(getSong(queue[pos]));
     loadCurrentTrack(false);
     renderAll();
     showPlayer();
@@ -397,6 +376,291 @@
   backBtn.addEventListener('click', showLibrary);
   lyricsToggleBtn.addEventListener('click', () => lyricsPanel.classList.toggle('open'));
 
+  // ---------- Uploads (your own songs, stored in this browser only) ----------
+  // Uploaded audio/cover files are kept as Blobs in IndexedDB (localStorage
+  // can't hold binary files) so they survive page reloads without ever
+  // leaving this browser.
+
+  const UPLOAD_DB_NAME = 'aether-library';
+  const UPLOAD_STORE_NAME = 'uploads';
+
+  function openUploadsDB(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(UPLOAD_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(UPLOAD_STORE_NAME, { keyPath: 'dbKey', autoIncrement: true });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function getAllUploadRecords(){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(UPLOAD_STORE_NAME, 'readonly').objectStore(UPLOAD_STORE_NAME).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function addUploadRecord(record){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(UPLOAD_STORE_NAME, 'readwrite').objectStore(UPLOAD_STORE_NAME).add(record);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function deleteUploadRecord(dbKey){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(UPLOAD_STORE_NAME, 'readwrite').objectStore(UPLOAD_STORE_NAME).delete(dbKey);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function makeUploadedSong(record){
+    return {
+      id: 'up-' + record.dbKey,
+      dbKey: record.dbKey,
+      url: URL.createObjectURL(record.audioBlob),
+      image: record.imageBlob ? URL.createObjectURL(record.imageBlob) : null,
+      album: record.album || 'Uploads',
+      lyrics: record.lyrics || '',
+      title: record.title,
+      artist: record.artist,
+      dur: null,
+      uploaded: true
+    };
+  }
+
+  async function loadUploadsFromDB(){
+    let records = [];
+    try {
+      records = await getAllUploadRecords();
+    } catch(e){ /* IndexedDB unavailable — app still works with the base library */ }
+    uploadedSongs = records.map(makeUploadedSong);
+    rebuildSongs();
+    renderLibrary();
+  }
+
+  function fmtBytes(n){
+    if (n < 1024*1024) return (n/1024).toFixed(0) + ' KB';
+    if (n < 1024*1024*1024) return (n/(1024*1024)).toFixed(0) + ' MB';
+    return (n/(1024*1024*1024)).toFixed(1) + ' GB';
+  }
+
+  async function renderStorageUsage(){
+    if (!navigator.storage || !navigator.storage.estimate){
+      uploadStorageEl.textContent = '';
+      return;
+    }
+    try {
+      const { usage, quota } = await navigator.storage.estimate();
+      const pct = quota ? Math.round((usage / quota) * 100) : 0;
+      uploadStorageEl.textContent = `${fmtBytes(usage)} used of ~${fmtBytes(quota)} available in this browser (${pct}%)`;
+      uploadStorageEl.classList.toggle('warn', pct >= 80);
+    } catch(e){
+      uploadStorageEl.textContent = '';
+    }
+  }
+
+  let uploadMode = 'one';
+
+  function setUploadMode(mode){
+    uploadMode = mode;
+    uploadModeOneBtn.classList.toggle('active', mode === 'one');
+    uploadModeManyBtn.classList.toggle('active', mode === 'many');
+    uploadOneFields.classList.toggle('hidden', mode !== 'one');
+    uploadManyFields.classList.toggle('hidden', mode !== 'many');
+    uploadSaveBtn.textContent = mode === 'many' ? 'Add All to Library' : 'Add to Library';
+  }
+
+  function openUploadPanel(){
+    const suggestions = albumOrder
+      .filter(name => name !== 'Uploads')
+      .map(name => `<option value="${name}"></option>`)
+      .join('');
+    albumSuggestions.innerHTML = suggestions;
+    setUploadMode('one');
+    uploadOverlay.classList.remove('hidden');
+    uploadTitleInput.focus();
+    renderStorageUsage();
+  }
+
+  function closeUploadPanel(){
+    uploadOverlay.classList.add('hidden');
+    uploadAudioInput.value = '';
+    uploadImageInput.value = '';
+    uploadTitleInput.value = '';
+    uploadArtistInput.value = '';
+    uploadAlbumInput.value = '';
+    uploadBulkAudioInput.value = '';
+    uploadBulkImageInput.value = '';
+    uploadBulkAlbumInput.value = '';
+    uploadBulkPreview.innerHTML = '';
+    uploadProgress.textContent = '';
+  }
+
+  addMusicBtn.addEventListener('click', openUploadPanel);
+  uploadCloseBtn.addEventListener('click', closeUploadPanel);
+  uploadOverlay.addEventListener('click', e => { if (e.target === uploadOverlay) closeUploadPanel(); });
+  uploadModeOneBtn.addEventListener('click', () => setUploadMode('one'));
+  uploadModeManyBtn.addEventListener('click', () => setUploadMode('many'));
+
+  uploadAudioInput.addEventListener('change', () => {
+    const file = uploadAudioInput.files[0];
+    if (!file) return;
+    const parsed = parseFilename(file.name);
+    if (!uploadTitleInput.value.trim()) uploadTitleInput.value = parsed.title;
+    if (!uploadArtistInput.value.trim()) uploadArtistInput.value = parsed.artist;
+  });
+
+  // Best-effort cover matching for bulk imports: normalize both the parsed
+  // song title and each candidate image's filename (strip extension,
+  // lowercase, drop punctuation) and look for an exact or containing match.
+  // Covers are commonly reused across several songs (whole albums sharing
+  // one image), so a single image file may legitimately match many songs.
+  function normalizeName(s){
+    return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  function matchImageForTitle(title, imageFiles){
+    const normTitle = normalizeName(title);
+    if (!normTitle) return null;
+    let best = null, bestLen = 0;
+    for (const img of imageFiles){
+      const base = normalizeName(img.name.replace(/\.[^/.]+$/, ''));
+      if (!base) continue;
+      if (base === normTitle) return img;
+      if ((normTitle.includes(base) || base.includes(normTitle)) && base.length > bestLen){
+        best = img;
+        bestLen = base.length;
+      }
+    }
+    return best;
+  }
+
+  function renderBulkPreview(){
+    const audioFiles = Array.from(uploadBulkAudioInput.files);
+    if (!audioFiles.length){ uploadBulkPreview.innerHTML = ''; return; }
+    const imageFiles = Array.from(uploadBulkImageInput.files);
+    uploadBulkPreview.innerHTML = audioFiles.map(f => {
+      const parsed = parseFilename(f.name);
+      const image = matchImageForTitle(parsed.title, imageFiles);
+      return `<div class="upload-bulk-row">
+        <span class="upload-bulk-title">${parsed.title}</span>
+        <span class="upload-bulk-sub">${parsed.artist} · ${image ? 'cover: ' + image.name : 'no cover match'}</span>
+      </div>`;
+    }).join('');
+  }
+  uploadBulkAudioInput.addEventListener('change', renderBulkPreview);
+  uploadBulkImageInput.addEventListener('change', renderBulkPreview);
+
+  async function handleSingleSave(){
+    const audioFile = uploadAudioInput.files[0];
+    if (!audioFile){
+      alert('Choose an audio file first.');
+      return;
+    }
+    const imageFile = uploadImageInput.files[0] || null;
+    const parsed = parseFilename(audioFile.name);
+    const record = {
+      title: uploadTitleInput.value.trim() || parsed.title,
+      artist: uploadArtistInput.value.trim() || parsed.artist,
+      album: uploadAlbumInput.value.trim() || 'Uploads',
+      lyrics: '',
+      audioBlob: audioFile,
+      imageBlob: imageFile,
+      addedAt: Date.now()
+    };
+    try {
+      const dbKey = await addUploadRecord(record);
+      uploadedSongs.push(makeUploadedSong({ ...record, dbKey }));
+      rebuildSongs();
+      renderLibrary();
+      closeUploadPanel();
+    } catch(e){
+      if (e && e.name === 'QuotaExceededError'){
+        alert('Your browser\'s storage is full. Remove an older upload (in the All Songs tab) or free up disk space, then try again.');
+      } else {
+        alert('Could not save that file in this browser: ' + (e && e.message ? e.message : 'unknown error'));
+      }
+    }
+  }
+
+  async function handleBulkSave(){
+    const audioFiles = Array.from(uploadBulkAudioInput.files);
+    if (!audioFiles.length){
+      alert('Choose at least one audio file.');
+      return;
+    }
+    const imageFiles = Array.from(uploadBulkImageInput.files);
+    const album = uploadBulkAlbumInput.value.trim() || 'Uploads';
+    let added = 0;
+    for (const audioFile of audioFiles){
+      const parsed = parseFilename(audioFile.name);
+      const record = {
+        title: parsed.title,
+        artist: parsed.artist,
+        album,
+        lyrics: '',
+        audioBlob: audioFile,
+        imageBlob: matchImageForTitle(parsed.title, imageFiles),
+        addedAt: Date.now()
+      };
+      uploadProgress.textContent = `Adding ${added + 1} of ${audioFiles.length}…`;
+      try {
+        const dbKey = await addUploadRecord(record);
+        uploadedSongs.push(makeUploadedSong({ ...record, dbKey }));
+        added++;
+      } catch(e){
+        rebuildSongs();
+        renderLibrary();
+        uploadProgress.textContent = '';
+        const reason = (e && e.name === 'QuotaExceededError')
+          ? 'ran out of browser storage'
+          : `hit an error (${e && e.message ? e.message : 'unknown'})`;
+        alert(`Added ${added} of ${audioFiles.length} songs before this ${reason}. Remove some older uploads to free up room, then add the rest.`);
+        return;
+      }
+    }
+    rebuildSongs();
+    renderLibrary();
+    uploadProgress.textContent = '';
+    closeUploadPanel();
+  }
+
+  uploadSaveBtn.addEventListener('click', async () => {
+    uploadSaveBtn.disabled = true;
+    try {
+      if (uploadMode === 'many') await handleBulkSave();
+      else await handleSingleSave();
+    } finally {
+      uploadSaveBtn.disabled = false;
+    }
+  });
+
+  async function removeUpload(song){
+    if (!confirm(`Remove "${song.title}" from your library?`)) return;
+    const wasPlayingThisSong = !playerView.classList.contains('hidden') && queue[pos] === song.id;
+    try {
+      await deleteUploadRecord(song.dbKey);
+    } catch(e){
+      alert('Could not remove that song.');
+      return;
+    }
+    URL.revokeObjectURL(song.url);
+    if (song.image) URL.revokeObjectURL(song.image);
+    uploadedSongs = uploadedSongs.filter(s => s.id !== song.id);
+    rebuildSongs();
+    if (wasPlayingThisSong) showLibrary();
+    renderLibrary();
+  }
+
   // ---------- Player ----------
 
   function renderQueueList(){
@@ -404,7 +668,7 @@
     const count = Math.min(4, queue.length - 1);
     for (let i=1;i<=count;i++){
       const songId = queue[(pos+i) % queue.length];
-      const song = songs[songId];
+      const song = getSong(songId);
       const li = document.createElement('li');
       li.className = 'entering';
       li.tabIndex = 0;
@@ -422,7 +686,7 @@
   }
 
   function renderNowPlaying(){
-    const song = songs[queue[pos]];
+    const song = getSong(queue[pos]);
     trackTitle.textContent = song.title;
     trackArtist.textContent = song.artist;
     albumTag.textContent = Array.isArray(song.album) ? song.album.join(' / ') : song.album;
@@ -455,7 +719,7 @@
   function crossfadeVisual(){
     artLayer.classList.add('fading');
     setTimeout(() => {
-      renderVisual(songs[queue[pos]]);
+      renderVisual(getSong(queue[pos]));
       artLayer.classList.remove('fading');
     }, 260);
   }
@@ -473,7 +737,7 @@
   }
 
   function enterLyricsEdit(){
-    const song = songs[queue[pos]];
+    const song = getSong(queue[pos]);
     lyricsEditor.value = song.lyrics || '';
     lyricsText.classList.add('hidden');
     lyricsEditBtn.classList.add('hidden');
@@ -492,7 +756,7 @@
   lyricsEditBtn.addEventListener('click', enterLyricsEdit);
   lyricsCancelBtn.addEventListener('click', exitLyricsEdit);
   lyricsSaveBtn.addEventListener('click', () => {
-    const song = songs[queue[pos]];
+    const song = getSong(queue[pos]);
     song.lyrics = lyricsEditor.value;
     try { localStorage.setItem(LYRICS_KEY_PREFIX + song.id, song.lyrics); } catch(e){}
     exitLyricsEdit();
@@ -506,7 +770,7 @@
   });
 
   function loadCurrentTrack(autoplay){
-    const song = songs[queue[pos]];
+    const song = getSong(queue[pos]);
     renderLyrics(song);
     audio.src = song.url;
     audio.currentTime = 0;
@@ -572,12 +836,12 @@
   document.getElementById('prevBtn').addEventListener('click', goPrev);
 
   likeBtn.addEventListener('click', () => {
-    const id = songs[queue[pos]].id;
+    const id = getSong(queue[pos]).id;
     liked.has(id) ? liked.delete(id) : liked.add(id);
     renderNowPlaying();
   });
   addBtn.addEventListener('click', () => {
-    const id = songs[queue[pos]].id;
+    const id = getSong(queue[pos]).id;
     added.has(id) ? added.delete(id) : added.add(id);
     renderNowPlaying();
   });
@@ -597,7 +861,7 @@
   });
 
   progressTrack.addEventListener('click', (e) => {
-    const song = songs[queue[pos]];
+    const song = getSong(queue[pos]);
     if (!song.dur) return;
     const rect = progressTrack.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
@@ -607,4 +871,5 @@
 
   // init — start on the albums library, don't load/play audio until a card is chosen
   renderLibrary();
+  loadUploadsFromDB();
 })();
