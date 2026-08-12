@@ -379,6 +379,10 @@
       while (actionsHtml.firstChild) thumb.appendChild(actionsHtml.firstChild);
 
       const coverInput = thumb.querySelector('.album-cover-input');
+      // input.click() below dispatches its own bubbling click event (a
+      // separate event object from the one on the edit button), which would
+      // otherwise reach the card's "open album" listener and start playback.
+      coverInput.addEventListener('click', e => e.stopPropagation());
       thumb.querySelector('.album-edit-btn').addEventListener('click', e => {
         e.stopPropagation();
         coverInput.click();
