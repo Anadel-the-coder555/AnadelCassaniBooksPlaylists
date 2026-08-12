@@ -130,6 +130,18 @@
   const uploadBulkPreview = document.getElementById('uploadBulkPreview');
   const uploadProgress = document.getElementById('uploadProgress');
 
+  const editSongOverlay = document.getElementById('editSongOverlay');
+  const editSongCloseBtn = document.getElementById('editSongCloseBtn');
+  const editSongImageInput = document.getElementById('editSongImageInput');
+  const editSongCoverCurrent = document.getElementById('editSongCoverCurrent');
+  const editSongRemoveCoverBtn = document.getElementById('editSongRemoveCoverBtn');
+  const editSongTitleInput = document.getElementById('editSongTitleInput');
+  const editSongArtistInput = document.getElementById('editSongArtistInput');
+  const editSongAlbumInput = document.getElementById('editSongAlbumInput');
+  const editSongSaveBtn = document.getElementById('editSongSaveBtn');
+  const editSongProgress = document.getElementById('editSongProgress');
+  const nowPlayingEditBtn = document.getElementById('nowPlayingEditBtn');
+
   const svg = document.getElementById('landscape');
   const landscapeImg = document.getElementById('landscapeImg');
   const artLayer = document.getElementById('artLayer');
@@ -276,12 +288,19 @@
           <div class="song-row-artist">${song.artist}</div>
         </div>
         <div class="song-row-album">${Array.isArray(song.album) ? song.album.join(' / ') : song.album}</div>
-        ${song.uploaded ? '<button class="song-row-delete" title="Remove from library" aria-label="Remove from library">✕</button>' : ''}
+        ${song.uploaded ? `<div class="song-row-actions">
+          <button class="song-row-icon-btn song-row-edit" title="Edit song" aria-label="Edit song">✎</button>
+          <button class="song-row-icon-btn song-row-delete" title="Remove from library" aria-label="Remove from library">✕</button>
+        </div>` : ''}
       `;
       const open = () => openSong(song.id);
       row.addEventListener('click', open);
       row.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
       if (song.uploaded){
+        row.querySelector('.song-row-edit').addEventListener('click', e => {
+          e.stopPropagation();
+          openEditSongPanel(song);
+        });
         row.querySelector('.song-row-delete').addEventListener('click', e => {
           e.stopPropagation();
           removeUpload(song);
@@ -335,7 +354,7 @@
 
     const thumbSvg = card.querySelector('.album-thumb svg');
     const thumbImg = card.querySelector('.album-thumb img');
-    const coverUrl = albumCovers[name];
+    const coverUrl = isAll ? null : (albumCoverOverrides.get(name) || albumCovers[name]);
     if (coverUrl){
       thumbImg.src = coverUrl;
       thumbImg.style.display = 'block';
@@ -346,6 +365,52 @@
       };
     } else {
       thumbSvg.innerHTML = landscapeMarkup(seed, uid);
+    }
+
+    if (!isAll){
+      const hasOverride = albumCoverOverrides.has(name);
+      const thumb = card.querySelector('.album-thumb');
+      const actionsHtml = document.createElement('div');
+      actionsHtml.innerHTML = `
+        <button class="album-edit-btn" title="Change album picture" aria-label="Change album picture">✎</button>
+        ${hasOverride ? '<button class="album-revert-btn" title="Remove custom picture" aria-label="Remove custom picture">↺</button>' : ''}
+        <input type="file" accept="image/*" class="album-cover-input hidden">
+      `;
+      while (actionsHtml.firstChild) thumb.appendChild(actionsHtml.firstChild);
+
+      const coverInput = thumb.querySelector('.album-cover-input');
+      thumb.querySelector('.album-edit-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        coverInput.click();
+      });
+      coverInput.addEventListener('change', async () => {
+        const file = coverInput.files[0];
+        if (!file) return;
+        try {
+          await putAlbumCoverRecord(name, file);
+          const old = albumCoverOverrides.get(name);
+          if (old) URL.revokeObjectURL(old);
+          albumCoverOverrides.set(name, URL.createObjectURL(file));
+          renderLibrary();
+        } catch(e){
+          alert('Could not save that picture: ' + (e && e.message ? e.message : 'unknown error'));
+        }
+      });
+      const revertBtn = thumb.querySelector('.album-revert-btn');
+      if (revertBtn){
+        revertBtn.addEventListener('click', async e => {
+          e.stopPropagation();
+          try {
+            await deleteAlbumCoverRecord(name);
+            const old = albumCoverOverrides.get(name);
+            if (old) URL.revokeObjectURL(old);
+            albumCoverOverrides.delete(name);
+            renderLibrary();
+          } catch(e){
+            alert('Could not remove that picture.');
+          }
+        });
+      }
     }
 
     const open = () => openAlbum(ids);
@@ -383,12 +448,20 @@
 
   const UPLOAD_DB_NAME = 'aether-library';
   const UPLOAD_STORE_NAME = 'uploads';
+  const ALBUM_COVER_STORE_NAME = 'albumCovers';
+  const DB_VERSION = 2;
 
   function openUploadsDB(){
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(UPLOAD_DB_NAME, 1);
+      const req = indexedDB.open(UPLOAD_DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
-        req.result.createObjectStore(UPLOAD_STORE_NAME, { keyPath: 'dbKey', autoIncrement: true });
+        const db = req.result;
+        if (!db.objectStoreNames.contains(UPLOAD_STORE_NAME)){
+          db.createObjectStore(UPLOAD_STORE_NAME, { keyPath: 'dbKey', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains(ALBUM_COVER_STORE_NAME)){
+          db.createObjectStore(ALBUM_COVER_STORE_NAME, { keyPath: 'name' });
+        }
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
@@ -420,6 +493,63 @@
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
+  }
+
+  // Merges `updates` (title/artist/album/imageBlob) into an existing upload
+  // record and persists it, so edits made after the initial upload stick.
+  async function updateUploadRecord(dbKey, updates){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const store = db.transaction(UPLOAD_STORE_NAME, 'readwrite').objectStore(UPLOAD_STORE_NAME);
+      const getReq = store.get(dbKey);
+      getReq.onsuccess = () => {
+        const record = getReq.result;
+        if (!record){ reject(new Error('Song not found')); return; }
+        Object.assign(record, updates);
+        const putReq = store.put(record);
+        putReq.onsuccess = () => resolve(record);
+        putReq.onerror = () => reject(putReq.error);
+      };
+      getReq.onerror = () => reject(getReq.error);
+    });
+  }
+
+  async function getAllAlbumCoverRecords(){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(ALBUM_COVER_STORE_NAME, 'readonly').objectStore(ALBUM_COVER_STORE_NAME).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function putAlbumCoverRecord(name, blob){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(ALBUM_COVER_STORE_NAME, 'readwrite').objectStore(ALBUM_COVER_STORE_NAME).put({ name, imageBlob: blob });
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function deleteAlbumCoverRecord(name){
+    const db = await openUploadsDB();
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(ALBUM_COVER_STORE_NAME, 'readwrite').objectStore(ALBUM_COVER_STORE_NAME).delete(name);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // Custom album cover art, keyed by album name, layered on top of the
+  // generated landscape art (and the static albumCovers map above).
+  let albumCoverOverrides = new Map();
+
+  async function loadAlbumCoversFromDB(){
+    let records = [];
+    try { records = await getAllAlbumCoverRecords(); } catch(e){ /* IndexedDB unavailable */ }
+    albumCoverOverrides = new Map(records.map(r => [r.name, URL.createObjectURL(r.imageBlob)]));
+    renderLibrary();
   }
 
   function makeUploadedSong(record){
@@ -644,6 +774,86 @@
     }
   });
 
+  // ---------- Editing an uploaded song's details/picture ----------
+
+  let editingSongId = null;
+  let editSongRemoveCoverFlag = false;
+
+  function openEditSongPanel(song){
+    if (!song || !song.uploaded) return;
+    editingSongId = song.id;
+    editSongRemoveCoverFlag = false;
+    editSongImageInput.value = '';
+    editSongTitleInput.value = song.title;
+    editSongArtistInput.value = song.artist;
+    editSongAlbumInput.value = Array.isArray(song.album) ? song.album.join(', ') : song.album;
+    editSongCoverCurrent.classList.toggle('hidden', !song.image);
+    const suggestions = albumOrder
+      .filter(name => name !== 'Uploads')
+      .map(name => `<option value="${name}"></option>`)
+      .join('');
+    albumSuggestions.innerHTML = suggestions;
+    editSongOverlay.classList.remove('hidden');
+    editSongTitleInput.focus();
+  }
+
+  function closeEditSongPanel(){
+    editSongOverlay.classList.add('hidden');
+    editingSongId = null;
+    editSongProgress.textContent = '';
+  }
+
+  editSongCloseBtn.addEventListener('click', closeEditSongPanel);
+  editSongOverlay.addEventListener('click', e => { if (e.target === editSongOverlay) closeEditSongPanel(); });
+
+  editSongRemoveCoverBtn.addEventListener('click', () => {
+    editSongRemoveCoverFlag = true;
+    editSongImageInput.value = '';
+    editSongCoverCurrent.classList.add('hidden');
+  });
+  editSongImageInput.addEventListener('change', () => {
+    if (editSongImageInput.files[0]) editSongRemoveCoverFlag = false;
+  });
+
+  editSongSaveBtn.addEventListener('click', async () => {
+    const song = getSong(editingSongId);
+    if (!song) return;
+    editSongSaveBtn.disabled = true;
+    editSongProgress.textContent = 'Saving…';
+    try {
+      const updates = {
+        title: editSongTitleInput.value.trim() || song.title,
+        artist: editSongArtistInput.value.trim() || song.artist,
+        album: editSongAlbumInput.value.trim() || 'Uploads',
+      };
+      const newImageFile = editSongImageInput.files[0];
+      if (newImageFile) updates.imageBlob = newImageFile;
+      else if (editSongRemoveCoverFlag) updates.imageBlob = null;
+
+      const record = await updateUploadRecord(song.dbKey, updates);
+      if (song.image) URL.revokeObjectURL(song.image);
+      song.title = record.title;
+      song.artist = record.artist;
+      song.album = record.album;
+      song.image = record.imageBlob ? URL.createObjectURL(record.imageBlob) : null;
+
+      rebuildSongs();
+      renderLibrary();
+      if (!playerView.classList.contains('hidden') && queue[pos] === song.id){
+        renderVisual(song);
+        renderAll();
+      }
+      closeEditSongPanel();
+    } catch(e){
+      alert('Could not save changes: ' + (e && e.message ? e.message : 'unknown error'));
+    } finally {
+      editSongSaveBtn.disabled = false;
+      editSongProgress.textContent = '';
+    }
+  });
+
+  nowPlayingEditBtn.addEventListener('click', () => openEditSongPanel(getSong(queue[pos])));
+
   async function removeUpload(song){
     if (!confirm(`Remove "${song.title}" from your library?`)) return;
     const wasPlayingThisSong = !playerView.classList.contains('hidden') && queue[pos] === song.id;
@@ -696,6 +906,7 @@
     progressFill.style.width = pct + '%';
     likeBtn.classList.toggle('active', liked.has(song.id));
     addBtn.classList.toggle('active', added.has(song.id));
+    nowPlayingEditBtn.classList.toggle('hidden', !song.uploaded);
   }
 
   function renderVisual(song){
@@ -872,4 +1083,5 @@
   // init — start on the albums library, don't load/play audio until a card is chosen
   renderLibrary();
   loadUploadsFromDB();
+  loadAlbumCoversFromDB();
 })();
