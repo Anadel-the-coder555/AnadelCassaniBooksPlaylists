@@ -61,6 +61,10 @@
         <span>Album</span>
         <input type="text" id="uploadAlbumInput" placeholder="Leave blank for “Uploads”" list="albumSuggestions">
       </label>
+      <label class="upload-field-checkbox">
+        <input type="checkbox" id="uploadHolidayInput">
+        <span>Holiday / Christmas track</span>
+      </label>
     </div>
 
     <div id="uploadManyFields" class="hidden">
@@ -75,6 +79,10 @@
       <label class="upload-field">
         <span>Album (applied to all of these — optional)</span>
         <input type="text" id="uploadBulkAlbumInput" placeholder="Leave blank for “Uploads”" list="albumSuggestions">
+      </label>
+      <label class="upload-field-checkbox">
+        <input type="checkbox" id="uploadBulkHolidayInput">
+        <span>Mark all of these as Holiday / Christmas tracks</span>
       </label>
       <div class="upload-bulk-preview" id="uploadBulkPreview"></div>
     </div>
@@ -115,6 +123,10 @@
     <label class="upload-field">
       <span>Album</span>
       <input type="text" id="editSongAlbumInput" placeholder="Leave blank for “Uploads”" list="albumSuggestions">
+    </label>
+    <label class="upload-field-checkbox">
+      <input type="checkbox" id="editSongHolidayInput">
+      <span>Holiday / Christmas track</span>
     </label>
 
     <div class="upload-actions">

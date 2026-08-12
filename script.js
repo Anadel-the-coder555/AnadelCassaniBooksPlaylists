@@ -38,8 +38,27 @@
 
   const baseSongs = trackData.map((t, i) => {
     const meta = parseFilename(t.audio);
-    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', lyrics: t.lyrics || '', title:meta.title, artist:meta.artist, dur:null, uploaded:false };
+    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', lyrics: t.lyrics || '', title:meta.title, artist:meta.artist, dur:null, uploaded:false, addedAt: t.addedAt || 0, holiday: !!t.holiday };
   });
+
+  // "Recently Added" and "Holiday" are computed automatically (see
+  // getRecentlyAddedIds/getHolidayIds below) rather than grouped by the
+  // song.album field, so these names are reserved and never double as a
+  // regular user-named album.
+  const RESERVED_ALBUM_NAMES = new Set(['Recently Added', 'Holiday']);
+  const RECENTLY_ADDED_COUNT = 20;
+
+  function getRecentlyAddedIds(limit){
+    return songs
+      .filter(s => !s.holiday)
+      .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0))
+      .slice(0, limit)
+      .map(s => s.id);
+  }
+
+  function getHolidayIds(){
+    return songs.filter(s => s.holiday).map(s => s.id);
+  }
 
   // Lyrics added through the app's own editor are saved in this browser and
   // take priority over anything hardcoded in trackData above.
@@ -117,6 +136,7 @@
   const uploadTitleInput = document.getElementById('uploadTitleInput');
   const uploadArtistInput = document.getElementById('uploadArtistInput');
   const uploadAlbumInput = document.getElementById('uploadAlbumInput');
+  const uploadHolidayInput = document.getElementById('uploadHolidayInput');
   const uploadSaveBtn = document.getElementById('uploadSaveBtn');
   const albumSuggestions = document.getElementById('albumSuggestions');
   const uploadStorageEl = document.getElementById('uploadStorageUsage');
@@ -127,6 +147,7 @@
   const uploadBulkAudioInput = document.getElementById('uploadBulkAudioInput');
   const uploadBulkImageInput = document.getElementById('uploadBulkImageInput');
   const uploadBulkAlbumInput = document.getElementById('uploadBulkAlbumInput');
+  const uploadBulkHolidayInput = document.getElementById('uploadBulkHolidayInput');
   const uploadBulkPreview = document.getElementById('uploadBulkPreview');
   const uploadProgress = document.getElementById('uploadProgress');
 
@@ -138,6 +159,7 @@
   const editSongTitleInput = document.getElementById('editSongTitleInput');
   const editSongArtistInput = document.getElementById('editSongArtistInput');
   const editSongAlbumInput = document.getElementById('editSongAlbumInput');
+  const editSongHolidayInput = document.getElementById('editSongHolidayInput');
   const editSongSaveBtn = document.getElementById('editSongSaveBtn');
   const editSongProgress = document.getElementById('editSongProgress');
   const nowPlayingEditBtn = document.getElementById('nowPlayingEditBtn');
@@ -270,7 +292,14 @@
   function renderLibrary(){
     albumGrid.innerHTML = '';
     albumGrid.appendChild(makeAlbumCard('All Songs', songs.map(s => s.id), true));
-    albumOrder.forEach(name => {
+
+    const recentIds = getRecentlyAddedIds(RECENTLY_ADDED_COUNT);
+    if (recentIds.length) albumGrid.appendChild(makeAlbumCard('Recently Added', recentIds, false));
+
+    const holidayIds = getHolidayIds();
+    if (holidayIds.length) albumGrid.appendChild(makeAlbumCard('Holiday', holidayIds, false));
+
+    albumOrder.filter(name => !RESERVED_ALBUM_NAMES.has(name)).forEach(name => {
       albumGrid.appendChild(makeAlbumCard(name, albumMap.get(name), false));
     });
     renderSongList();
@@ -567,7 +596,9 @@
       title: record.title,
       artist: record.artist,
       dur: null,
-      uploaded: true
+      uploaded: true,
+      addedAt: record.addedAt || 0,
+      holiday: !!record.holiday
     };
   }
 
@@ -615,7 +646,7 @@
 
   function openUploadPanel(){
     const suggestions = albumOrder
-      .filter(name => name !== 'Uploads')
+      .filter(name => name !== 'Uploads' && !RESERVED_ALBUM_NAMES.has(name))
       .map(name => `<option value="${name}"></option>`)
       .join('');
     albumSuggestions.innerHTML = suggestions;
@@ -632,9 +663,11 @@
     uploadTitleInput.value = '';
     uploadArtistInput.value = '';
     uploadAlbumInput.value = '';
+    uploadHolidayInput.checked = false;
     uploadBulkAudioInput.value = '';
     uploadBulkImageInput.value = '';
     uploadBulkAlbumInput.value = '';
+    uploadBulkHolidayInput.checked = false;
     uploadBulkPreview.innerHTML = '';
     uploadProgress.textContent = '';
   }
@@ -709,7 +742,8 @@
       lyrics: '',
       audioBlob: audioFile,
       imageBlob: imageFile,
-      addedAt: Date.now()
+      addedAt: Date.now(),
+      holiday: uploadHolidayInput.checked
     };
     try {
       const dbKey = await addUploadRecord(record);
@@ -744,7 +778,8 @@
         lyrics: '',
         audioBlob: audioFile,
         imageBlob: matchImageForTitle(parsed.title, imageFiles),
-        addedAt: Date.now()
+        addedAt: Date.now(),
+        holiday: uploadBulkHolidayInput.checked
       };
       uploadProgress.textContent = `Adding ${added + 1} of ${audioFiles.length}…`;
       try {
@@ -792,8 +827,9 @@
     editSongArtistInput.value = song.artist;
     editSongAlbumInput.value = Array.isArray(song.album) ? song.album.join(', ') : song.album;
     editSongCoverCurrent.classList.toggle('hidden', !song.image);
+    editSongHolidayInput.checked = !!song.holiday;
     const suggestions = albumOrder
-      .filter(name => name !== 'Uploads')
+      .filter(name => name !== 'Uploads' && !RESERVED_ALBUM_NAMES.has(name))
       .map(name => `<option value="${name}"></option>`)
       .join('');
     albumSuggestions.innerHTML = suggestions;
@@ -829,6 +865,7 @@
         title: editSongTitleInput.value.trim() || song.title,
         artist: editSongArtistInput.value.trim() || song.artist,
         album: editSongAlbumInput.value.trim() || 'Uploads',
+        holiday: editSongHolidayInput.checked,
       };
       const newImageFile = editSongImageInput.files[0];
       if (newImageFile) updates.imageBlob = newImageFile;
@@ -839,6 +876,7 @@
       song.title = record.title;
       song.artist = record.artist;
       song.album = record.album;
+      song.holiday = !!record.holiday;
       song.image = record.imageBlob ? URL.createObjectURL(record.imageBlob) : null;
 
       rebuildSongs();
