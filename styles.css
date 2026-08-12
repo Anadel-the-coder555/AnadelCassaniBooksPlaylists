@@ -563,19 +563,52 @@ body{
 .play-btn svg{ width:clamp(22px, 2.4vw, 32px); height:clamp(22px, 2.4vw, 32px); }
 
 @media (max-width:560px){
-  .player{ aspect-ratio:3/4.4; border-radius:14px; }
-  .queue-panel{ max-width:70%; }
+  body{ padding:0; min-height:100dvh; }
+
+  /* Edge-to-edge on phones: the app fills the real screen instead of floating
+     as an aspect-ratio card, which is what left large empty bars above/below
+     and squeezed the queue list into the now-playing area. */
+  .library-view{
+    width:100vw; max-width:none;
+    height:100dvh; max-height:none;
+    border-radius:0;
+    padding:calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  }
+  .player{
+    width:100vw; max-width:none;
+    aspect-ratio:unset;
+    height:100dvh; max-height:none;
+    border-radius:0;
+  }
+  .back-btn{
+    top:calc(18px + env(safe-area-inset-top)); right:calc(16px + env(safe-area-inset-right));
+  }
+  .back-btn span{ display:none; }
+  .queue-panel{
+    max-width:70%;
+    top:calc(64px + env(safe-area-inset-top));
+    max-height:34vh;
+    overflow-y:auto;
+  }
   #queueList .qtitle{ font-size:16px; }
   .controls-row{ gap:14px; }
   .album-grid{ grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); }
-  .library-view{ padding:22px; }
-  .back-btn span{ display:none; }
   .song-row-album{ display:none; }
+  .now-playing{ padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+  .track-title{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  .upload-overlay{
+    padding:calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  }
 
   .lyrics-panel{
     position:absolute;
-    top:64px; left:16px; right:16px; width:auto; max-width:none;
-    max-height:60vh;
+    top:calc(64px + env(safe-area-inset-top)); left:16px; right:16px; width:auto; max-width:none;
+    min-height:34vh;
+    max-height:calc(100dvh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     background:rgba(10,8,7,0.82);
     border-radius:12px;
     padding:16px 18px;
@@ -585,7 +618,7 @@ body{
   .lyrics-panel.open{ display:block; }
   .lyrics-toggle-btn{
     display:flex; align-items:center; gap:6px;
-    position:absolute; top:clamp(18px,2.4vw,30px); left:clamp(20px,2.6vw,34px);
+    position:absolute; top:calc(18px + env(safe-area-inset-top)); left:calc(16px + env(safe-area-inset-left));
     z-index:3;
     background:rgba(20,16,15,0.55);
     border:1px solid rgba(201,169,97,.35);
