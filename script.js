@@ -1157,25 +1157,61 @@
   // back (getImageData throws SecurityError).
   function updateSongPaletteFromImage(song, imgEl){
     try {
-      const w = 28, h = 28;
+      const w = 32, h = 32;
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(imgEl, 0, 0, w, h);
       const data = ctx.getImageData(0, 0, w, h).data;
+
       let r = 0, g = 0, b = 0, count = 0;
-      let bestSat = -1, sr = 0, sg = 0, sb = 0;
+      // Grouping vivid pixels into coarse color buckets (rather than just
+      // grabbing the single most-saturated pixel) is what keeps one stray
+      // outlier — a bright reflection, a tiny colored object, a compression
+      // artifact — from hijacking the whole background: a lone pixel can't
+      // out-score a color that actually recurs across a chunk of the photo.
+      const BUCKET = 24;
+      const buckets = new Map();
       for (let i = 0; i < data.length; i += 4){
         if (data[i + 3] < 128) continue;
         const rr = data[i], gg = data[i + 1], bb = data[i + 2];
         r += rr; g += gg; b += bb; count++;
+
         const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb);
         const sat = mx === 0 ? 0 : (mx - mn) / mx;
-        if (sat > bestSat && mx > 30){ bestSat = sat; sr = rr; sg = gg; sb = bb; }
+        const lightness = mx / 255;
+        // Skip near-black/near-white/washed-out pixels as accent candidates —
+        // they'd only ever produce a dull gray "accent", not a real one.
+        if (sat < 0.15 || lightness < 0.12 || lightness > 0.95) continue;
+
+        const key = (rr / BUCKET | 0) + '_' + (gg / BUCKET | 0) + '_' + (bb / BUCKET | 0);
+        let bucket = buckets.get(key);
+        if (!bucket){ bucket = { count: 0, r: 0, g: 0, b: 0, sat: 0 }; buckets.set(key, bucket); }
+        bucket.count++;
+        bucket.r += rr; bucket.g += gg; bucket.b += bb;
+        bucket.sat += sat;
       }
       if (!count) throw new Error('empty image sample');
       const avg = [r / count, g / count, b / count];
-      const accent = bestSat >= 0 ? [sr, sg, sb] : avg;
+
+      // Eligible buckets need a minimum presence (not just 1-2 stray pixels
+      // that survived downsampling) — but among those that clear that bar,
+      // rank by pure saturation, not frequency. Weighting by frequency too
+      // (an earlier version of this did) let a large dull background always
+      // outscore a smaller but genuinely vivid feature — a red flower against
+      // green foliage would lose to "more green" every time, which isn't
+      // what "accent color" should mean.
+      const minBucketCount = Math.max(3, count * 0.008);
+      let bestBucket = null, bestSat = -1;
+      for (const bucket of buckets.values()){
+        if (bucket.count < minBucketCount) continue;
+        const avgSat = bucket.sat / bucket.count;
+        if (avgSat > bestSat){ bestSat = avgSat; bestBucket = bucket; }
+      }
+      const accent = bestBucket
+        ? [bestBucket.r / bestBucket.count, bestBucket.g / bestBucket.count, bestBucket.b / bestBucket.count]
+        : avg;
+
       const luminance = (0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]) / 255;
       songPalette.set(song.id, {
         bg1: mixToPastel(avg, 0.4),
