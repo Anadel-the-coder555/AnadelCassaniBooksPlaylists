@@ -433,14 +433,22 @@
   // can't hold binary files) so they survive page reloads without ever
   // leaving this browser.
 
-  const UPLOAD_DB_NAME = 'aether-library';
+  // Named for this specific project, not a generic "aether-library" — IndexedDB
+  // is scoped per browser origin (protocol+host+port), so a local dev server
+  // port reused across several unrelated projects makes them all the SAME
+  // origin as far as storage is concerned. A generic DB name is one more thing
+  // that could collide if another project happens to share that boilerplate;
+  // LEGACY_UPLOAD_DB_NAME is checked once (see migrateLegacyStorageIfNeeded)
+  // so upload data saved under the old name isn't silently orphaned.
+  const UPLOAD_DB_NAME = 'anadel-books-playlist-library';
+  const LEGACY_UPLOAD_DB_NAME = 'aether-library';
   const UPLOAD_STORE_NAME = 'uploads';
   const ALBUM_COVER_STORE_NAME = 'albumCovers';
   const DB_VERSION = 2;
 
-  function openUploadsDB(){
+  function openUploadsDB(dbName){
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(UPLOAD_DB_NAME, DB_VERSION);
+      const req = indexedDB.open(dbName || UPLOAD_DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
         const db = req.result;
         if (!db.objectStoreNames.contains(UPLOAD_STORE_NAME)){
@@ -462,6 +470,51 @@
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+  }
+
+  async function getAllRecordsFrom(dbName, storeName){
+    const db = await openUploadsDB(dbName);
+    return new Promise((resolve, reject) => {
+      const req = db.transaction(storeName, 'readonly').objectStore(storeName).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // One-time safety net for the UPLOAD_DB_NAME rename above: if this origin
+  // still has data sitting under the old database name (nothing has read it
+  // since the rename), copy it into the current one instead of leaving it
+  // orphaned. No-ops instantly once the current DB already has uploads, and
+  // silently does nothing if the legacy DB never existed on this browser.
+  async function migrateLegacyStorageIfNeeded(){
+    try {
+      const current = await getAllUploadRecords();
+      if (current.length) return;
+      // indexedDB.open() creates a database as a side effect if the name
+      // doesn't exist yet, which would otherwise leave an empty
+      // "aether-library" shell behind on every origin that never had one —
+      // checking databases() first (where supported) avoids that entirely.
+      if (indexedDB.databases){
+        const existing = await indexedDB.databases();
+        if (!existing.some(d => d.name === LEGACY_UPLOAD_DB_NAME)) return;
+      }
+      const legacyUploads = await getAllRecordsFrom(LEGACY_UPLOAD_DB_NAME, UPLOAD_STORE_NAME);
+      if (legacyUploads.length){
+        const db = await openUploadsDB();
+        const store = db.transaction(UPLOAD_STORE_NAME, 'readwrite').objectStore(UPLOAD_STORE_NAME);
+        legacyUploads.forEach(r => {
+          const copy = Object.assign({}, r);
+          delete copy.dbKey; // let the new store assign fresh auto-increment keys
+          store.add(copy);
+        });
+      }
+      const legacyCovers = await getAllRecordsFrom(LEGACY_UPLOAD_DB_NAME, ALBUM_COVER_STORE_NAME);
+      if (legacyCovers.length){
+        const db = await openUploadsDB();
+        const store = db.transaction(ALBUM_COVER_STORE_NAME, 'readwrite').objectStore(ALBUM_COVER_STORE_NAME);
+        legacyCovers.forEach(r => store.put(r));
+      }
+    } catch(e){ /* legacy DB doesn't exist on this browser — nothing to migrate */ }
   }
 
   async function addUploadRecord(record){
@@ -557,6 +610,7 @@
   async function loadUploadsFromDB(){
     let records = [];
     try {
+      await migrateLegacyStorageIfNeeded();
       records = await getAllUploadRecords();
     } catch(e){ /* IndexedDB unavailable — app still works with the base library */ }
     uploadedSongs = records.map(makeUploadedSong);
@@ -1253,4 +1307,12 @@
   renderLibrary();
   loadUploadsFromDB();
   loadAlbumCoversFromDB();
+
+  // Best-effort request that the browser not evict this origin's storage
+  // under disk pressure without asking first. Doesn't guarantee anything (the
+  // browser can still say no, and it's a no-op in browsers that don't support
+  // it), but it's a free extra layer against silently losing uploads.
+  if (navigator.storage && navigator.storage.persist){
+    navigator.storage.persist().catch(() => {});
+  }
 })();

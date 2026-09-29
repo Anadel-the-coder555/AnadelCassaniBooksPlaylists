@@ -399,12 +399,11 @@ body{
   z-index:1;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  /* Top padding and the gap below are both a bit more generous than the bare
-     minimum needed to clear the back/play corner buttons — the album chip
-     sits above now-playing's own top edge (see .album-chip's negative top),
-     so this extra room is what keeps it from crowding the carousel images
-     above it. */
-  gap:clamp(24px,3vw,40px);
+  /* This gap plus .album-chip's negative top together reach up toward the
+     carousel images — shrink one and the other needs to shrink with it, or
+     the chip either crowds the images (gap too small for its reach) or the
+     title sits too far below them (gap too big). */
+  gap:clamp(12px,1.8vw,22px);
   padding:clamp(48px,5.5vw,72px) clamp(20px,2.6vw,34px) clamp(16px,2vw,28px);
 }
 
@@ -518,7 +517,7 @@ body{
    actual album tile rather than a small inline icon. */
 .album-chip{
   position:absolute;
-  left:0; top:clamp(-56px,-4.5vw,-34px);
+  left:0; top:clamp(-40px,-3vw,-22px);
   display:flex; align-items:center; gap:12px;
   text-align:left;
   max-width:min(45%, 320px);
@@ -557,9 +556,13 @@ body{
 .progress-row{
   display:flex; align-items:center; gap:10px;
   margin-bottom:10px;
-  /* Set by JS (renderAlbumChipArt) to the chip's actual measured width, so
-     the bar starts clear of it instead of running underneath. */
+  /* --chip-inset is set by JS (renderAlbumChipArt) to the chip's actual
+     measured width, so the bar starts clear of it instead of running
+     underneath. Applied to both sides (not just margin-left) so the bar
+     narrows symmetrically and stays centered under the title — a left-only
+     margin would shift its middle off to the right instead. */
   margin-left:var(--chip-inset, 0px);
+  margin-right:var(--chip-inset, 0px);
 }
 .progress-row span{
   font-size:11px;
@@ -660,7 +663,7 @@ body{
   .album-chip-art{ width:44px; }
   /* Chip is back in normal flow above the title here, so the progress row
      doesn't need the desktop layout's left inset for it. */
-  .progress-row{ margin-left:0; }
+  .progress-row{ margin-left:0; margin-right:0; }
 
   .upload-overlay{
     padding:calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
