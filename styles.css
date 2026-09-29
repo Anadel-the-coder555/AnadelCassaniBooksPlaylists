@@ -376,11 +376,14 @@ body{
 }
 
 /* ---------- Player view ---------- */
-/* The player's background follows the current song's picture (see
-   applyPlayerBackground in script.js) — these --pl-* vars are how every
-   element in here (chips, text, controls) stays legible against whatever
-   color that turns out to be, without touching the app-wide --parchment/
-   --gold theme that the library and upload panels always use. */
+/* The player's background is the current song's own cover photo, blurred
+   full-bleed behind everything (see updatePlayerBackdrop in script.js) —
+   an Apple-Music-style backdrop instead of a computed color palette. A
+   constant dark scrim over it (.backdrop-scrim below) keeps text legible
+   regardless of the photo, so there's no per-song light/dark branching or
+   color extraction needed — just the image itself, which sidesteps the
+   whole class of "background hasn't caught up yet" timing bugs a computed
+   palette had. --pl-fg/--pl-accent stay fixed for the same reason. */
 .player{
   position:relative;
   width:94vw;
@@ -396,22 +399,29 @@ body{
   --pl-chip-border:rgba(201,169,97,.35);
   --pl-ctrl-bg:rgba(255,255,255,0.08);
   --pl-track-bg:rgba(255,255,255,0.18);
-  background:linear-gradient(135deg, hsl(255,22%,15%), hsl(285,20%,10%));
-  transition:background 700ms ease;
   box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,169,97,0.15);
 }
-.player.palette-instant,
-.player.palette-instant *{
-  transition:none !important;
+.player-backdrop{
+  position:absolute; inset:0;
+  z-index:0;
+  overflow:hidden;
+  background:linear-gradient(135deg, hsl(255,22%,15%), hsl(285,20%,10%));
 }
-.player.light{
-  --pl-fg:var(--ink);
-  --pl-fg-dim:var(--ink-soft);
-  --pl-accent:#8a6a28;
-  --pl-chip-bg:rgba(255,255,255,0.55);
-  --pl-chip-border:rgba(20,16,15,.18);
-  --pl-ctrl-bg:rgba(20,16,15,0.08);
-  --pl-track-bg:rgba(20,16,15,0.16);
+.backdrop-layer{
+  /* Oversized past the box (inset:-10%) and clipped by the parent's
+     overflow:hidden so blur() sampling past the photo's own edge doesn't
+     leave a lighter/transparent vignette ring around it. */
+  position:absolute; inset:-10%;
+  background-size:cover;
+  background-position:center;
+  filter:blur(60px) saturate(1.3) brightness(0.75);
+  opacity:0;
+  transition:opacity 900ms ease;
+}
+.backdrop-layer.is-active{ opacity:1; }
+.backdrop-scrim{
+  position:absolute; inset:0;
+  background:rgba(10,8,10,0.4);
 }
 .back-btn{
   position:absolute; top:clamp(18px,2.4vw,30px); right:clamp(20px,2.6vw,34px);
@@ -496,16 +506,11 @@ body{
   pointer-events:none;
   z-index:0;
 }
-/* Tied to the same --pl-accent the rest of the player's theme uses (flips
-   with the palette via .player.light), instead of a hardcoded white JS sets
-   per song — this is what "follow the background ruleset" means here. */
-/* --pl-wave-a/b come from the current song's own extracted palette (set in
-   applyPlayerBackground, script.js) — the same two colors the background
-   gradient uses — so the wave is always built from that song's palette
-   rather than a fixed theme color. Falls back to --pl-accent before the
-   first song has ever loaded a palette. */
-.player-carousel-wave path{ fill:var(--pl-wave-a, var(--pl-accent)); opacity:0.85; }
-.player-carousel-wave path:last-child{ fill:var(--pl-wave-b, var(--pl-accent)); opacity:0.6; }
+/* A fixed two-tone accent rather than a per-song extracted color — the
+   blurred photo backdrop behind the wave is what carries each song's own
+   look now, so the wave itself stays a constant theme flourish. */
+.player-carousel-wave path{ fill:var(--pl-accent); opacity:0.8; }
+.player-carousel-wave path:last-child{ fill:var(--parchment); opacity:0.3; }
 
 .player-carousel-item{
   position:absolute; top:50%; left:50%;

@@ -96,6 +96,8 @@
 
   const libraryView = document.getElementById('libraryView');
   const playerView = document.getElementById('playerView');
+  const backdropLayerA = document.getElementById('backdropLayerA');
+  const backdropLayerB = document.getElementById('backdropLayerB');
   const songListView = document.getElementById('songListView');
   const allSongsBtn = document.getElementById('allSongsBtn');
   const playAllBtn = document.getElementById('playAllBtn');
@@ -1113,12 +1115,11 @@
   // ---------- Player carousel ----------
   // The carousel IS the player's main visual: each item is a song from the
   // current queue, and the whole player background follows whichever one is
-  // centered (see applyPlayerBackground). Only a small window around `pos` is
+  // centered (see updatePlayerBackdrop). Only a small window around `pos` is
   // ever built — the queue can be the entire library, and there's no reason
-  // to load/sample images for songs that aren't within a step or two of view.
+  // to load images for songs that aren't within a step or two of view.
 
   const playerCarouselCache = new Map(); // song id -> DOM element
-  const songPalette = new Map(); // song id -> { bg1, bg2, useDarkText }
 
   function getPlayerWindowIndices(){
     const n = queue.length;
@@ -1129,123 +1130,49 @@
     return Array.from(idxs);
   }
 
-  // Blends a sampled color toward white for a soft pastel wash while keeping some of its hue.
-  function mixToPastel([r, g, b], amt){
-    const mr = Math.round(r + (255 - r) * amt);
-    const mg = Math.round(g + (255 - g) * amt);
-    const mb = Math.round(b + (255 - b) * amt);
-    return `rgb(${mr}, ${mg}, ${mb})`;
-  }
-
-  // No picture to sample from — fall back to a moody dark gradient in the same
-  // hue family as this song's generated skyline art, instead of a pastel one,
-  // so the "no cover" case still matches the app's default dark theme.
-  function setSongPaletteFromSeed(song, instant){
+  // No picture for this song — fall back to a moody dark gradient in the same
+  // hue family as its generated skyline art, instead of computing anything
+  // from a photo that doesn't exist.
+  function seedBackdropGradient(song){
     const seed = hashStr(String(song.id));
     const rnd = mulberry32(seed * 977 + 13);
     const hue = 250 + Math.floor(rnd() * 70);
-    songPalette.set(song.id, {
-      bg1: `hsl(${hue}, 30%, 15%)`,
-      bg2: `hsl(${(hue + 300) % 360}, 24%, 8%)`,
-      useDarkText: false
-    });
-    if (queue[pos] === song.id) applyPlayerBackground(song, instant);
+    return `linear-gradient(135deg, hsl(${hue}, 30%, 18%), hsl(${(hue + 300) % 360}, 24%, 10%))`;
   }
 
-  // Samples the loaded cover image on an offscreen canvas to pull its palette. Falls back
-  // to setSongPaletteFromSeed if the image is a cross-origin file the canvas can't read
-  // back (getImageData throws SecurityError).
-  function updateSongPaletteFromImage(song, imgEl){
-    try {
-      const w = 32, h = 32;
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(imgEl, 0, 0, w, h);
-      const data = ctx.getImageData(0, 0, w, h).data;
-
-      let r = 0, g = 0, b = 0, count = 0;
-      // Grouping vivid pixels into coarse color buckets (rather than just
-      // grabbing the single most-saturated pixel) is what keeps one stray
-      // outlier — a bright reflection, a tiny colored object, a compression
-      // artifact — from hijacking the whole background: a lone pixel can't
-      // out-score a color that actually recurs across a chunk of the photo.
-      const BUCKET = 24;
-      const buckets = new Map();
-      for (let i = 0; i < data.length; i += 4){
-        if (data[i + 3] < 128) continue;
-        const rr = data[i], gg = data[i + 1], bb = data[i + 2];
-        r += rr; g += gg; b += bb; count++;
-
-        const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb);
-        const sat = mx === 0 ? 0 : (mx - mn) / mx;
-        const lightness = mx / 255;
-        // Skip near-black/near-white/washed-out pixels as accent candidates —
-        // they'd only ever produce a dull gray "accent", not a real one.
-        if (sat < 0.15 || lightness < 0.12 || lightness > 0.95) continue;
-
-        const key = (rr / BUCKET | 0) + '_' + (gg / BUCKET | 0) + '_' + (bb / BUCKET | 0);
-        let bucket = buckets.get(key);
-        if (!bucket){ bucket = { count: 0, r: 0, g: 0, b: 0, sat: 0 }; buckets.set(key, bucket); }
-        bucket.count++;
-        bucket.r += rr; bucket.g += gg; bucket.b += bb;
-        bucket.sat += sat;
-      }
-      if (!count) throw new Error('empty image sample');
-      const avg = [r / count, g / count, b / count];
-
-      // Eligible buckets need a minimum presence (not just 1-2 stray pixels
-      // that survived downsampling) — but among those that clear that bar,
-      // rank by pure saturation, not frequency. Weighting by frequency too
-      // (an earlier version of this did) let a large dull background always
-      // outscore a smaller but genuinely vivid feature — a red flower against
-      // green foliage would lose to "more green" every time, which isn't
-      // what "accent color" should mean.
-      const minBucketCount = Math.max(3, count * 0.008);
-      let bestBucket = null, bestSat = -1;
-      for (const bucket of buckets.values()){
-        if (bucket.count < minBucketCount) continue;
-        const avgSat = bucket.sat / bucket.count;
-        if (avgSat > bestSat){ bestSat = avgSat; bestBucket = bucket; }
-      }
-      const accent = bestBucket
-        ? [bestBucket.r / bestBucket.count, bestBucket.g / bestBucket.count, bestBucket.b / bestBucket.count]
-        : avg;
-
-      const luminance = (0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]) / 255;
-      songPalette.set(song.id, {
-        bg1: mixToPastel(avg, 0.4),
-        bg2: mixToPastel(accent, 0.5),
-        useDarkText: luminance > 0.55
-      });
-    } catch(e){
-      setSongPaletteFromSeed(song);
-      return;
-    }
-    if (queue[pos] === song.id) applyPlayerBackground(song);
-  }
-
-  function applyPlayerBackground(song, instant){
-    const p = songPalette.get(song.id);
-    if (!p) return;
-    // A temporary seed placeholder snaps in instantly (no transition) so it
-    // never plays its own fade — only the real extracted color, applied
-    // afterward with the normal transition, should visibly animate in.
-    // Without this, switching songs showed a fade-to-wrong-color-then-
-    // fade-to-right-color double animation, which read as the background
-    // "skipping" even though it was never actually stuck.
-    if (instant) playerView.classList.add('palette-instant');
-    playerView.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
-    // The wave's fill comes from these same two colors (see
-    // .player-carousel-wave path in styles.css), not a generic theme accent —
-    // that's what makes it actually follow the background's per-song palette
-    // instead of just flipping between two fixed light/dark states.
-    playerView.style.setProperty('--pl-wave-a', p.bg1);
-    playerView.style.setProperty('--pl-wave-b', p.bg2);
-    playerView.classList.toggle('light', p.useDarkText);
-    if (instant){
-      void playerView.offsetHeight;
-      playerView.classList.remove('palette-instant');
+  // Crossfades the player's blurred backdrop to whichever song is actually
+  // current — Apple-Music-style full-bleed cover art instead of a computed
+  // color palette. Two stacked layers alternate as the "incoming" one so the
+  // swap always has something to fade from. This is called directly from
+  // renderAll (i.e. every time `pos` changes), not from an image's own load
+  // callback queued against the carousel's build order — so there's no
+  // window where navigating away mid-load strands an update meant for a
+  // song that isn't showing anymore, which was the source of the earlier
+  // "stuck"/"skips" background bugs. A token guards the rare case where an
+  // older song's image resolves after a newer one already took over.
+  let backdropShowingA = false;
+  let backdropToken = 0;
+  let backdropSongId = null;
+  function updatePlayerBackdrop(song){
+    if (song.id === backdropSongId) return;
+    backdropSongId = song.id;
+    const myToken = ++backdropToken;
+    const incoming = backdropShowingA ? backdropLayerB : backdropLayerA;
+    const outgoing = backdropShowingA ? backdropLayerA : backdropLayerB;
+    const apply = (backgroundValue) => {
+      if (myToken !== backdropToken) return; // a newer song has since taken over
+      incoming.style.background = backgroundValue;
+      incoming.classList.add('is-active');
+      outgoing.classList.remove('is-active');
+      backdropShowingA = !backdropShowingA;
+    };
+    if (song.image){
+      const img = new Image();
+      img.onload = () => apply(`url("${song.image}")`);
+      img.onerror = () => apply(seedBackdropGradient(song));
+      img.src = song.image;
+    } else {
+      apply(seedBackdropGradient(song));
     }
   }
 
@@ -1265,39 +1192,13 @@
     const uid = 'plr' + Math.abs(seed) + uidSuffix;
     if (song.image){
       imgEl.style.display = 'block';
-      // Seed a placeholder palette immediately, synchronously — before the
-      // image has even started loading. Without this, a song whose photo is
-      // still mid-fetch has no palette at all yet, so renderPlayerCarousel's
-      // "only apply if we already have one" check finds nothing and leaves
-      // the background frozen on whatever the previous song's was. If the
-      // user navigates on before the real photo finishes loading (easy to do
-      // — network fetches are never instant), that song's real-color update
-      // gets silently dropped too, since it only applies if this is *still*
-      // the current song when the image resolves. Net effect without this:
-      // the background can lag several songs behind on a fresh album open.
-      // This placeholder guarantees an immediate, never-stuck update on every
-      // navigation, which the real extracted colors then seamlessly replace.
-      setSongPaletteFromSeed(song, true);
-      // Try CORS mode first so the canvas isn't tainted and the real palette can be
-      // sampled; a host that doesn't send CORS headers (e.g. some Dropbox links)
-      // fails to load in that mode, so retry once without it — the photo still has
-      // to display even when we can't read its pixels back.
-      imgEl.crossOrigin = 'anonymous';
-      imgEl.onload = () => updateSongPaletteFromImage(song, imgEl);
       imgEl.onerror = () => {
-        imgEl.crossOrigin = null;
-        imgEl.onload = () => setSongPaletteFromSeed(song);
-        imgEl.onerror = () => {
-          imgEl.style.display = 'none';
-          svgEl.innerHTML = landscapeMarkup(seed, uid);
-          setSongPaletteFromSeed(song);
-        };
-        imgEl.src = song.image;
+        imgEl.style.display = 'none';
+        svgEl.innerHTML = landscapeMarkup(seed, uid);
       };
       imgEl.src = song.image;
     } else {
       svgEl.innerHTML = landscapeMarkup(seed, uid);
-      setSongPaletteFromSeed(song);
     }
     return wrap;
   }
@@ -1351,8 +1252,6 @@
       }
     });
     positionPlayerCarouselItems();
-    const currentId = queue[pos];
-    if (songPalette.has(currentId)) applyPlayerBackground(getSong(currentId));
   }
 
   // Used when a currently-playing song's cover image is changed via the edit
@@ -1361,7 +1260,7 @@
   function invalidatePlayerCarouselItem(songId){
     const el = playerCarouselCache.get(songId);
     if (el){ el.remove(); playerCarouselCache.delete(songId); }
-    songPalette.delete(songId);
+    if (songId === backdropSongId) backdropSongId = null; // force the backdrop to re-fetch the new picture
   }
 
   // Drag-to-swipe and tap-to-select both live in these pointer handlers rather
@@ -1432,6 +1331,7 @@
   function renderAll(){
     renderNowPlaying();
     renderPlayerCarousel();
+    if (queue.length) updatePlayerBackdrop(getSong(queue[pos]));
   }
 
   function jumpTo(newPos){

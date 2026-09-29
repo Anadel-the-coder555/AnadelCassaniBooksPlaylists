@@ -11,15 +11,15 @@
      instead of possibly serving a stale cached one alongside fresh HTML —
      that mismatch is what causes "old JS looking for an element the new HTML
      doesn't have" crashes. -->
-<link rel="stylesheet" href="styles.css?v=20260932">
+<link rel="stylesheet" href="styles.css?v=20260933">
 </head>
 <body>
 
 <div id="libraryView" class="library-view">
   <div class="library-header">
     <div>
-      <div class="library-title">Aether</div>
-      <div class="library-sub">Your Albums</div>
+      <div class="library-title">Novel Songs</div>
+      <div class="library-sub">Albums</div>
     </div>
     <button class="add-music-btn" id="addMusicBtn" title="Add music" aria-label="Add music">+ Add Music</button>
   </div>
@@ -145,6 +145,12 @@
 </div>
 
 <div class="player hidden" id="playerView">
+  <div class="player-backdrop" id="playerBackdrop" aria-hidden="true">
+    <div class="backdrop-layer" id="backdropLayerA"></div>
+    <div class="backdrop-layer" id="backdropLayerB"></div>
+    <div class="backdrop-scrim"></div>
+  </div>
+
   <button class="back-btn" id="backBtn" title="Back to albums" aria-label="Back to albums">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>
     <span>Albums</span>
@@ -214,6 +220,6 @@
   </div>
 </div>
 
-<script src="script.js?v=20260932"></script>
+<script src="script.js?v=20260933"></script>
 </body>
 </html>
