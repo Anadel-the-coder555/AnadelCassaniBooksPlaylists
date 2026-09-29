@@ -506,11 +506,15 @@ body{
   pointer-events:none;
   z-index:0;
 }
-/* A fixed two-tone accent rather than a per-song extracted color — the
-   blurred photo backdrop behind the wave is what carries each song's own
-   look now, so the wave itself stays a constant theme flourish. */
-.player-carousel-wave path{ fill:var(--pl-accent); opacity:0.8; }
-.player-carousel-wave path:last-child{ fill:var(--parchment); opacity:0.3; }
+/* --pl-wave-a/b come from the current song's own photo (sampled off the
+   same image the blurred backdrop already loaded — see updateWaveAccent in
+   script.js), so the wave still follows each song like the backdrop does.
+   Falls back to the fixed theme accent/parchment when a photo can't be
+   sampled (no cover, or a cross-origin host without CORS headers). This is
+   purely decorative now — unlike the old palette system, a stale or
+   missing accent here never affects the actual background. */
+.player-carousel-wave path{ fill:var(--pl-wave-a, var(--pl-accent)); opacity:0.8; transition:fill 700ms ease; }
+.player-carousel-wave path:last-child{ fill:var(--pl-wave-b, var(--parchment)); opacity:0.3; transition:fill 700ms ease; }
 
 .player-carousel-item{
   position:absolute; top:50%; left:50%;

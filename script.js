@@ -1167,12 +1167,111 @@
       backdropShowingA = !backdropShowingA;
     };
     if (song.image){
+      // crossOrigin lets the same loaded image also be sampled on a canvas
+      // for the wave's accent color below; a host that doesn't send CORS
+      // headers fails to load in that mode, so retry once without it — the
+      // photo still has to display even when we can't read its pixels back,
+      // just without a matching wave color for that one song.
       const img = new Image();
-      img.onload = () => apply(`url("${song.image}")`);
-      img.onerror = () => apply(seedBackdropGradient(song));
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        apply(`url("${song.image}")`);
+        updateWaveAccent(img, myToken);
+      };
+      img.onerror = () => {
+        resetWaveAccent(myToken);
+        const plain = new Image();
+        plain.onload = () => apply(`url("${song.image}")`);
+        plain.onerror = () => apply(seedBackdropGradient(song));
+        plain.src = song.image;
+      };
       img.src = song.image;
     } else {
       apply(seedBackdropGradient(song));
+      resetWaveAccent(myToken);
+    }
+  }
+
+  // Blends a sampled color toward white for a soft pastel wash while keeping some of its hue.
+  function mixToPastel([r, g, b], amt){
+    const mr = Math.round(r + (255 - r) * amt);
+    const mg = Math.round(g + (255 - g) * amt);
+    const mb = Math.round(b + (255 - b) * amt);
+    return `rgb(${mr}, ${mg}, ${mb})`;
+  }
+
+  function resetWaveAccent(myToken){
+    if (myToken !== backdropToken) return;
+    playerView.style.removeProperty('--pl-wave-a');
+    playerView.style.removeProperty('--pl-wave-b');
+  }
+
+  // Samples the same (already-loaded, no extra fetch) cover image on an
+  // offscreen canvas so the wave's two-tone fill follows this song's own
+  // photo again — purely decorative, so unlike the old background-driving
+  // version of this, a stale or dropped result here just leaves the wave a
+  // beat behind instead of freezing the whole player's background.
+  function updateWaveAccent(imgEl, myToken){
+    try {
+      const w = 32, h = 32;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imgEl, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+
+      let r = 0, g = 0, b = 0, count = 0;
+      // Grouping vivid pixels into coarse color buckets (rather than just
+      // grabbing the single most-saturated pixel) is what keeps one stray
+      // outlier — a bright reflection, a tiny colored object, a compression
+      // artifact — from hijacking the whole accent: a lone pixel can't
+      // out-score a color that actually recurs across a chunk of the photo.
+      const BUCKET = 24;
+      const buckets = new Map();
+      for (let i = 0; i < data.length; i += 4){
+        if (data[i + 3] < 128) continue;
+        const rr = data[i], gg = data[i + 1], bb = data[i + 2];
+        r += rr; g += gg; b += bb; count++;
+
+        const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb);
+        const sat = mx === 0 ? 0 : (mx - mn) / mx;
+        const lightness = mx / 255;
+        // Skip near-black/near-white/washed-out pixels as accent candidates —
+        // they'd only ever produce a dull gray "accent", not a real one.
+        if (sat < 0.15 || lightness < 0.12 || lightness > 0.95) continue;
+
+        const key = (rr / BUCKET | 0) + '_' + (gg / BUCKET | 0) + '_' + (bb / BUCKET | 0);
+        let bucket = buckets.get(key);
+        if (!bucket){ bucket = { count: 0, r: 0, g: 0, b: 0, sat: 0 }; buckets.set(key, bucket); }
+        bucket.count++;
+        bucket.r += rr; bucket.g += gg; bucket.b += bb;
+        bucket.sat += sat;
+      }
+      if (!count) return;
+      const avg = [r / count, g / count, b / count];
+
+      // Eligible buckets need a minimum presence (not just 1-2 stray pixels
+      // that survived downsampling) — but among those that clear that bar,
+      // rank by pure saturation, not frequency. Weighting by frequency too
+      // let a large dull background always outscore a smaller but genuinely
+      // vivid feature — a red flower against green foliage would lose to
+      // "more green" every time, which isn't what "accent color" should mean.
+      const minBucketCount = Math.max(3, count * 0.008);
+      let bestBucket = null, bestSat = -1;
+      for (const bucket of buckets.values()){
+        if (bucket.count < minBucketCount) continue;
+        const avgSat = bucket.sat / bucket.count;
+        if (avgSat > bestSat){ bestSat = avgSat; bestBucket = bucket; }
+      }
+      const accent = bestBucket
+        ? [bestBucket.r / bestBucket.count, bestBucket.g / bestBucket.count, bestBucket.b / bestBucket.count]
+        : avg;
+
+      if (myToken !== backdropToken) return; // a newer song has since taken over
+      playerView.style.setProperty('--pl-wave-a', mixToPastel(avg, 0.35));
+      playerView.style.setProperty('--pl-wave-b', mixToPastel(accent, 0.45));
+    } catch(e){
+      // Tainted canvas (CORS) or similar — leave the wave at its fixed fallback color.
     }
   }
 
