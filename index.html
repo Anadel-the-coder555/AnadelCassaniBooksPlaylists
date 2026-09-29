@@ -18,11 +18,22 @@
     </div>
     <button class="add-music-btn" id="addMusicBtn" title="Add music" aria-label="Add music">+ Add Music</button>
   </div>
-  <div class="library-tabs">
-    <button class="tab-btn active" data-tab="albums">Albums</button>
-    <button class="tab-btn" data-tab="songs">All Songs</button>
+  <div class="library-top-actions">
+    <button class="library-action-btn" id="allSongsBtn">All Songs</button>
+    <button class="library-action-btn primary" id="playAllBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l13 7-13 7z"/></svg>
+      Play All
+    </button>
   </div>
-  <div class="album-grid" id="albumGrid"></div>
+
+  <div class="album-carousel" id="albumCarousel">
+    <div class="album-carousel-stage" id="albumCarouselStage"></div>
+    <div class="album-carousel-caption">
+      <div class="album-carousel-name" id="albumCarouselName">—</div>
+      <div class="album-carousel-count" id="albumCarouselCount"></div>
+    </div>
+  </div>
+
   <div class="song-list hidden" id="songListView"></div>
 </div>
 

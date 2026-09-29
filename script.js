@@ -96,9 +96,13 @@
 
   const libraryView = document.getElementById('libraryView');
   const playerView = document.getElementById('playerView');
-  const albumGrid = document.getElementById('albumGrid');
   const songListView = document.getElementById('songListView');
-  const tabBtns = document.querySelectorAll('.tab-btn');
+  const allSongsBtn = document.getElementById('allSongsBtn');
+  const playAllBtn = document.getElementById('playAllBtn');
+  const albumCarousel = document.getElementById('albumCarousel');
+  const albumCarouselStage = document.getElementById('albumCarouselStage');
+  const albumCarouselName = document.getElementById('albumCarouselName');
+  const albumCarouselCount = document.getElementById('albumCarouselCount');
   const backBtn = document.getElementById('backBtn');
 
   const addMusicBtn = document.getElementById('addMusicBtn');
@@ -245,21 +249,10 @@
     return `<path d="${d}" fill="${color}"/>`;
   }
 
-  // ---------- Library (albums grid) ----------
+  // ---------- Library (album carousel) ----------
 
   function renderLibrary(){
-    albumGrid.innerHTML = '';
-    albumGrid.appendChild(makeAlbumCard('All Songs', songs.map(s => s.id), true));
-
-    const recentIds = getRecentlyAddedIds(RECENTLY_ADDED_COUNT);
-    if (recentIds.length) albumGrid.appendChild(makeAlbumCard('Recently Added', recentIds, false));
-
-    const holidayIds = getHolidayIds();
-    if (holidayIds.length) albumGrid.appendChild(makeAlbumCard('Holiday', holidayIds, false));
-
-    albumOrder.filter(name => !RESERVED_ALBUM_NAMES.has(name)).forEach(name => {
-      albumGrid.appendChild(makeAlbumCard(name, albumMap.get(name), false));
-    });
+    renderAlbumCarousel();
     renderSongList();
   }
 
@@ -309,104 +302,232 @@
     setPlaying(true);
   }
 
-  tabBtns.forEach(btn => btn.addEventListener('click', () => {
-    tabBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    albumGrid.classList.toggle('hidden', tab !== 'albums');
-    songListView.classList.toggle('hidden', tab !== 'songs');
-  }));
+  allSongsBtn.addEventListener('click', () => {
+    const showingList = !songListView.classList.contains('hidden');
+    if (showingList){
+      songListView.classList.add('hidden');
+      albumCarousel.classList.remove('hidden');
+      allSongsBtn.classList.remove('active');
+    } else {
+      songListView.classList.remove('hidden');
+      albumCarousel.classList.add('hidden');
+      allSongsBtn.classList.add('active');
+    }
+  });
 
-  function makeAlbumCard(name, ids, isAll){
-    const card = document.createElement('div');
-    card.className = 'album-card' + (isAll ? ' all-songs' : '');
-    card.tabIndex = 0;
+  playAllBtn.addEventListener('click', () => {
+    if (songs.length) openAlbum(songs.map(s => s.id));
+  });
 
-    const seed = isAll ? hashStr('ALL_SONGS_AETHER') : hashStr(name);
-    const uid = 'lib' + Math.abs(seed) + (isAll ? 'a' : '');
+  // ---------- Album carousel ----------
+  // Same interactive-coverflow pattern as the player's own carousel further
+  // down: drag/swipe to browse, tap the centered item to open it, tap a
+  // peeking neighbor to bring it to center — no arrow buttons anywhere.
 
-    card.innerHTML = `
-      <div class="album-thumb">
+  let libraryCarouselAlbums = [];
+  let libraryCarouselIndex = 0;
+  const libraryCarouselCache = new Map(); // album name -> DOM element
+
+  function getLibraryCarouselAlbums(){
+    const list = [];
+    const recentIds = getRecentlyAddedIds(RECENTLY_ADDED_COUNT);
+    if (recentIds.length) list.push({ name: 'Recently Added', ids: recentIds });
+    const holidayIds = getHolidayIds();
+    if (holidayIds.length) list.push({ name: 'Holiday', ids: holidayIds });
+    albumOrder.filter(name => !RESERVED_ALBUM_NAMES.has(name)).forEach(name => {
+      list.push({ name, ids: albumMap.get(name) });
+    });
+    return list;
+  }
+
+  function buildLibraryCarouselItemEl(albumEntry, uidSuffix){
+    const { name } = albumEntry;
+    const wrap = document.createElement('div');
+    wrap.className = 'album-carousel-item';
+    wrap.dataset.name = name;
+    wrap.innerHTML = `
+      <div class="album-carousel-item-inner">
         <svg viewBox="0 0 1200 750" preserveAspectRatio="xMidYMid slice"></svg>
         <img alt="" style="display:none;">
-        <div class="thumb-scrim"></div>
         <div class="play-overlay"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l13 7-13 7z"/></svg></div>
-      </div>
-      <div class="album-info">
-        <div class="album-name">${name}</div>
-        <div class="album-count">${ids.length} ${ids.length===1?'song':'songs'}</div>
       </div>`;
-
-    const thumbSvg = card.querySelector('.album-thumb svg');
-    const thumbImg = card.querySelector('.album-thumb img');
-    const coverUrl = isAll ? null : (albumCoverOverrides.get(name) || albumCovers[name]);
+    const svgEl = wrap.querySelector('svg');
+    const imgEl = wrap.querySelector('img');
+    const seed = hashStr(name);
+    const uid = 'libcar' + Math.abs(seed) + uidSuffix;
+    const coverUrl = albumCoverOverrides.get(name) || albumCovers[name];
     if (coverUrl){
-      thumbImg.src = coverUrl;
-      thumbImg.style.display = 'block';
-      thumbImg.onerror = () => {
-        // cover image failed to load — fall back to generated art
-        thumbImg.style.display = 'none';
-        thumbSvg.innerHTML = landscapeMarkup(seed, uid);
+      imgEl.src = coverUrl;
+      imgEl.style.display = 'block';
+      imgEl.onerror = () => {
+        imgEl.style.display = 'none';
+        svgEl.innerHTML = landscapeMarkup(seed, uid);
       };
     } else {
-      thumbSvg.innerHTML = landscapeMarkup(seed, uid);
+      svgEl.innerHTML = landscapeMarkup(seed, uid);
     }
 
-    if (!isAll){
-      const hasOverride = albumCoverOverrides.has(name);
-      const thumb = card.querySelector('.album-thumb');
-      const actionsHtml = document.createElement('div');
-      actionsHtml.innerHTML = `
-        <button class="album-edit-btn" title="Change album picture" aria-label="Change album picture">✎</button>
-        ${hasOverride ? '<button class="album-revert-btn" title="Remove custom picture" aria-label="Remove custom picture">↺</button>' : ''}
-        <input type="file" accept="image/*" class="album-cover-input hidden">
-      `;
-      while (actionsHtml.firstChild) thumb.appendChild(actionsHtml.firstChild);
+    const hasOverride = albumCoverOverrides.has(name);
+    const inner = wrap.querySelector('.album-carousel-item-inner');
+    const actionsHtml = document.createElement('div');
+    actionsHtml.innerHTML = `
+      <button class="album-edit-btn" title="Change album picture" aria-label="Change album picture">✎</button>
+      ${hasOverride ? '<button class="album-revert-btn" title="Remove custom picture" aria-label="Remove custom picture">↺</button>' : ''}
+      <input type="file" accept="image/*" class="album-cover-input hidden">
+    `;
+    while (actionsHtml.firstChild) inner.appendChild(actionsHtml.firstChild);
 
-      const coverInput = thumb.querySelector('.album-cover-input');
-      // input.click() below dispatches its own bubbling click event (a
-      // separate event object from the one on the edit button), which would
-      // otherwise reach the card's "open album" listener and start playback.
-      coverInput.addEventListener('click', e => e.stopPropagation());
-      thumb.querySelector('.album-edit-btn').addEventListener('click', e => {
+    const coverInput = inner.querySelector('.album-cover-input');
+    coverInput.addEventListener('click', e => e.stopPropagation());
+    inner.querySelector('.album-edit-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      coverInput.click();
+    });
+    coverInput.addEventListener('change', async () => {
+      const file = coverInput.files[0];
+      if (!file) return;
+      try {
+        await putAlbumCoverRecord(name, file);
+        const old = albumCoverOverrides.get(name);
+        if (old) URL.revokeObjectURL(old);
+        albumCoverOverrides.set(name, URL.createObjectURL(file));
+        renderLibrary();
+      } catch(e){
+        alert('Could not save that picture: ' + (e && e.message ? e.message : 'unknown error'));
+      }
+    });
+    const revertBtn = inner.querySelector('.album-revert-btn');
+    if (revertBtn){
+      revertBtn.addEventListener('click', async e => {
         e.stopPropagation();
-        coverInput.click();
-      });
-      coverInput.addEventListener('change', async () => {
-        const file = coverInput.files[0];
-        if (!file) return;
         try {
-          await putAlbumCoverRecord(name, file);
+          await deleteAlbumCoverRecord(name);
           const old = albumCoverOverrides.get(name);
           if (old) URL.revokeObjectURL(old);
-          albumCoverOverrides.set(name, URL.createObjectURL(file));
+          albumCoverOverrides.delete(name);
           renderLibrary();
         } catch(e){
-          alert('Could not save that picture: ' + (e && e.message ? e.message : 'unknown error'));
+          alert('Could not remove that picture.');
         }
       });
-      const revertBtn = thumb.querySelector('.album-revert-btn');
-      if (revertBtn){
-        revertBtn.addEventListener('click', async e => {
-          e.stopPropagation();
-          try {
-            await deleteAlbumCoverRecord(name);
-            const old = albumCoverOverrides.get(name);
-            if (old) URL.revokeObjectURL(old);
-            albumCoverOverrides.delete(name);
-            renderLibrary();
-          } catch(e){
-            alert('Could not remove that picture.');
-          }
-        });
-      }
     }
 
-    const open = () => openAlbum(ids);
-    card.addEventListener('click', open);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
-    return card;
+    return wrap;
   }
+
+  function positionLibraryCarouselItems(){
+    const n = libraryCarouselAlbums.length;
+    if (!n) return;
+    libraryCarouselAlbums.forEach((a, i) => {
+      const el = libraryCarouselCache.get(a.name);
+      if (!el) return;
+      let d = i - libraryCarouselIndex;
+      if (d > n / 2) d -= n;
+      if (d < -n / 2) d += n;
+      const abs = Math.abs(d);
+      el.classList.toggle('is-active', d === 0);
+      if (abs > 1){
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.transform = `translate(-50%,-50%) translateX(${d * 130}%) scale(0.5)`;
+        el.style.zIndex = '0';
+      } else {
+        el.style.opacity = abs === 0 ? '1' : '0.55';
+        el.style.pointerEvents = 'auto';
+        const scale = abs === 0 ? 1 : 0.68;
+        el.style.transform = `translate(-50%,-50%) translateX(${d * 62}%) scale(${scale})`;
+        el.style.zIndex = String(10 - abs);
+      }
+    });
+  }
+
+  function updateLibraryCarouselCaption(){
+    const a = libraryCarouselAlbums[libraryCarouselIndex];
+    if (!a){
+      albumCarouselName.textContent = 'No albums yet';
+      albumCarouselCount.textContent = '';
+      return;
+    }
+    albumCarouselName.textContent = a.name;
+    albumCarouselCount.textContent = `${a.ids.length} ${a.ids.length === 1 ? 'song' : 'songs'}`;
+  }
+
+  function setLibraryCarouselIndex(i){
+    const n = libraryCarouselAlbums.length;
+    if (!n) return;
+    libraryCarouselIndex = ((i % n) + n) % n;
+    positionLibraryCarouselItems();
+    updateLibraryCarouselCaption();
+  }
+
+  function renderAlbumCarousel(){
+    libraryCarouselAlbums = getLibraryCarouselAlbums();
+    if (!libraryCarouselAlbums.length){
+      albumCarouselStage.innerHTML = '';
+      libraryCarouselCache.clear();
+      updateLibraryCarouselCaption();
+      return;
+    }
+    if (libraryCarouselIndex >= libraryCarouselAlbums.length) libraryCarouselIndex = 0;
+
+    const names = new Set(libraryCarouselAlbums.map(a => a.name));
+    for (const [name, el] of libraryCarouselCache){
+      if (!names.has(name)){ el.remove(); libraryCarouselCache.delete(name); }
+    }
+    libraryCarouselAlbums.forEach((a, i) => {
+      if (!libraryCarouselCache.has(a.name)){
+        const el = buildLibraryCarouselItemEl(a, i);
+        libraryCarouselCache.set(a.name, el);
+        albumCarouselStage.appendChild(el);
+      }
+    });
+
+    positionLibraryCarouselItems();
+    updateLibraryCarouselCaption();
+  }
+
+  // Same drag-doubles-as-tap technique the player carousel uses:
+  // setPointerCapture (needed so a swipe that starts on an image still tracks
+  // correctly) retargets the native click event to albumCarouselStage itself,
+  // so per-item click handlers never fire for real pointer input — a tap is
+  // just a drag whose distance stayed under threshold. The edit/revert cover
+  // buttons are excluded up front so their own clicks still work normally.
+  let libraryDragging = false, libraryDragStartX = 0, libraryDragDeltaX = 0, libraryPointerDownItem = null;
+  albumCarouselStage.addEventListener('pointerdown', e => {
+    if (e.target.closest('.album-edit-btn, .album-revert-btn, .album-cover-input')) return;
+    libraryDragging = true;
+    libraryDragStartX = e.clientX;
+    libraryDragDeltaX = 0;
+    libraryPointerDownItem = e.target.closest('.album-carousel-item');
+    albumCarouselStage.setPointerCapture(e.pointerId);
+    albumCarouselStage.classList.add('dragging');
+  });
+  albumCarouselStage.addEventListener('pointermove', e => {
+    if (!libraryDragging) return;
+    libraryDragDeltaX = e.clientX - libraryDragStartX;
+    albumCarouselStage.style.setProperty('--drag', libraryDragDeltaX + 'px');
+  });
+  function endLibraryDrag(){
+    if (!libraryDragging) return;
+    libraryDragging = false;
+    albumCarouselStage.classList.remove('dragging');
+    albumCarouselStage.style.setProperty('--drag', '0px');
+    const swipeThreshold = 50;
+    const tapThreshold = 6;
+    if (libraryDragDeltaX > swipeThreshold) setLibraryCarouselIndex(libraryCarouselIndex - 1);
+    else if (libraryDragDeltaX < -swipeThreshold) setLibraryCarouselIndex(libraryCarouselIndex + 1);
+    else if (Math.abs(libraryDragDeltaX) <= tapThreshold && libraryPointerDownItem){
+      const idx = libraryCarouselAlbums.findIndex(a => a.name === libraryPointerDownItem.dataset.name);
+      if (idx !== -1){
+        if (idx === libraryCarouselIndex) openAlbum(libraryCarouselAlbums[idx].ids);
+        else setLibraryCarouselIndex(idx);
+      }
+    }
+    libraryDragDeltaX = 0;
+    libraryPointerDownItem = null;
+  }
+  albumCarouselStage.addEventListener('pointerup', endLibraryDrag);
+  albumCarouselStage.addEventListener('pointercancel', endLibraryDrag);
 
   function openAlbum(ids){
     queue = ids.slice();
