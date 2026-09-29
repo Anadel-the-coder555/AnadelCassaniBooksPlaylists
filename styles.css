@@ -4,7 +4,7 @@
   --parchment:#f3ebda;
   --parchment-dim:#cabfa9;
   --gold:#c9a961;
-  --rose:#c2557b;
+  --rose:#f1ecee;
   --mist:#8f8676;
   --font-display:'Cormorant Garamond', serif;
   --font-body:'Inter', sans-serif;
@@ -326,13 +326,17 @@ body{
   font-size:18px; color:var(--parchment);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.song-row-artist{ font-size:12px; color:var(--parchment-dim); margin-top:2px; }
 .song-row-album{
   font-size:11px; letter-spacing:.08em; text-transform:uppercase;
   color:var(--gold); opacity:.8; flex-shrink:0; white-space:nowrap;
 }
 
 /* ---------- Player view ---------- */
+/* The player's background follows the current song's picture (see
+   applyPlayerBackground in script.js) — these --pl-* vars are how every
+   element in here (chips, text, controls) stays legible against whatever
+   color that turns out to be, without touching the app-wide --parchment/
+   --gold theme that the library and upload panels always use. */
 .player{
   position:relative;
   width:94vw;
@@ -341,292 +345,270 @@ body{
   max-height:90vh;
   border-radius:18px;
   overflow:hidden;
-  background:var(--ink);
+  --pl-fg:var(--parchment);
+  --pl-fg-dim:var(--parchment-dim);
+  --pl-accent:var(--gold);
+  --pl-chip-bg:rgba(20,16,15,0.55);
+  --pl-chip-border:rgba(201,169,97,.35);
+  --pl-ctrl-bg:rgba(255,255,255,0.08);
+  --pl-track-bg:rgba(255,255,255,0.18);
+  background:linear-gradient(135deg, hsl(255,22%,15%), hsl(285,20%,10%));
+  transition:background 700ms ease;
   box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,169,97,0.15);
+}
+.player.light{
+  --pl-fg:var(--ink);
+  --pl-fg-dim:var(--ink-soft);
+  --pl-accent:#8a6a28;
+  --pl-chip-bg:rgba(255,255,255,0.55);
+  --pl-chip-border:rgba(20,16,15,.18);
+  --pl-ctrl-bg:rgba(20,16,15,0.08);
+  --pl-track-bg:rgba(20,16,15,0.16);
 }
 .back-btn{
   position:absolute; top:clamp(18px,2.4vw,30px); right:clamp(20px,2.6vw,34px);
   z-index:3;
   display:flex; align-items:center; gap:6px;
-  background:rgba(20,16,15,0.55);
-  border:1px solid rgba(201,169,97,.35);
-  color:var(--parchment);
+  background:var(--pl-chip-bg);
+  border:1px solid var(--pl-chip-border);
+  color:var(--pl-fg);
   border-radius:20px;
   padding:7px 14px 7px 10px;
   font-family:var(--font-body);
   font-size:12px; letter-spacing:.05em;
   cursor:pointer;
   backdrop-filter:blur(4px);
+  transition:background .2s ease, color .5s ease, border-color .5s ease;
 }
-.back-btn:hover{ background:rgba(20,16,15,0.82); }
+.back-btn:hover{ filter:brightness(1.15); }
 .back-btn svg{ width:15px; height:15px; }
 
-.lyrics-panel{
-  position:absolute;
-  top:clamp(22px, 3vw, 40px); right:clamp(24px, 3vw, 42px);
-  width:34%;
-  max-width:320px;
-  max-height:50%;
-  overflow-y:auto;
-  z-index:2;
-  padding-right:6px;
+/* All five transport/status controls (like, shuffle, prev, play, next) live
+   here now instead of a bottom controls row — floating top-left, mirroring
+   .back-btn on the right. Bare .ctrl-btn icons (no chip background) match how
+   they always looked sitting directly on the dynamic background before. */
+.corner-controls-left{
+  position:absolute; top:clamp(18px,2.4vw,30px); left:clamp(20px,2.6vw,34px);
+  z-index:3;
+  display:flex; align-items:center; gap:clamp(6px,1vw,14px);
 }
-.lyrics-panel::-webkit-scrollbar{ width:5px; }
-.lyrics-panel::-webkit-scrollbar-thumb{ background:rgba(201,169,97,.35); border-radius:3px; }
-.lyrics-panel-header{
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:10px;
-}
-.lyrics-label{
-  font-family:var(--font-body);
-  font-size:clamp(11px, 1vw, 14px);
-  letter-spacing:0.22em;
-  text-transform:uppercase;
-  color:var(--gold);
-  opacity:0.9;
-}
-.lyrics-edit-btn{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(201,169,97,.35);
-  cursor:pointer;
-  color:var(--parchment);
-  display:inline-flex; align-items:center; justify-content:center;
-  width:32px; height:32px;
-  border-radius:50%;
-  transition:color .2s ease, background .2s ease, border-color .2s ease, transform .15s ease;
-  flex-shrink:0;
-  padding:0;
-  position:relative;
-  z-index:5;
-}
-.lyrics-edit-btn:hover{ color:var(--gold); background:rgba(255,255,255,0.12); border-color:rgba(201,169,97,.55); transform:translateY(-1px); }
-.lyrics-edit-btn.hidden{ display:none !important; }
-.lyrics-edit-icon{
-  font-size:16px;
-  line-height:1;
-  font-weight:700;
-  display:block;
-}
-.lyrics-text{
-  font-family:var(--font-display);
-  font-style:italic;
-  font-size:clamp(14px, 1.15vw, 17px);
-  line-height:1.65;
-  color:var(--parchment-dim);
-  white-space:pre-line;
-}
-.lyrics-text.empty{ opacity:.55; }
-.lyrics-text.hidden{ display:none; }
 
-.lyrics-editor{
-  display:block;
-  width:100%;
-  min-height:220px;
-  background:rgba(0,0,0,0.25);
-  border:1px solid rgba(201,169,97,.3);
-  border-radius:8px;
-  padding:10px 12px;
-  color:var(--parchment);
-  font-family:var(--font-body);
-  font-size:13px;
-  line-height:1.6;
-  resize:vertical;
-}
-.lyrics-editor:focus{ outline:none; border-color:var(--gold); }
-.lyrics-editor.hidden{ display:none; }
-
-.lyrics-edit-actions{ display:flex; gap:8px; margin-top:10px; }
-.lyrics-edit-actions.hidden{ display:none; }
-.lyrics-save-btn, .lyrics-cancel-btn{
-  border:none; border-radius:16px; padding:6px 16px;
-  font-family:var(--font-body); font-size:12px; letter-spacing:.04em;
-  cursor:pointer; transition:opacity .2s ease;
-}
-.lyrics-save-btn{ background:var(--rose); color:var(--ink); }
-.lyrics-cancel-btn{ background:rgba(255,255,255,0.08); color:var(--parchment-dim); }
-.lyrics-save-btn:hover, .lyrics-cancel-btn:hover{ opacity:.85; }
-
-.lyrics-toggle-btn{ display:none; }
-
-.art-layer{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  transition:opacity 0.5s ease;
-}
-.art-layer.fading{ opacity:0; }
-.landscape-svg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  display:block;
-}
-#landscapeImg{
-  object-fit:cover;
-  object-position:center;
-  display:none;
-}
-.scrim{
+/* ---------- Player carousel + now-playing (the player's main content) ---------- */
+.player-main{
   position:absolute; inset:0;
-  background:linear-gradient(to top, rgba(10,8,7,0.92) 0%, rgba(10,8,7,0.55) 32%, rgba(10,8,7,0.05) 58%, rgba(10,8,7,0.35) 100%);
-  pointer-events:none;
+  z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  /* Top padding and the gap below are both a bit more generous than the bare
+     minimum needed to clear the back/play corner buttons — the album chip
+     sits above now-playing's own top edge (see .album-chip's negative top),
+     so this extra room is what keeps it from crowding the carousel images
+     above it. */
+  gap:clamp(24px,3vw,40px);
+  padding:clamp(48px,5.5vw,72px) clamp(20px,2.6vw,34px) clamp(16px,2vw,28px);
 }
 
-/* queue panel */
-.queue-panel{
+.player-carousel{
+  position:relative;
+  width:100%;
+  flex:1 1 auto;
+  min-height:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.player-carousel-stage{
+  /* Fills whatever space is actually left in .player-main after the
+     now-playing block and padding claim theirs (via the flex:1 on
+     .player-carousel above) — a fixed vh-based height here would either
+     leave a gap or overflow the player depending on viewport, since the
+     player's own height doesn't track viewport height directly. */
+  position:relative;
+  width:100%;
+  height:100%;
+  transform:translateX(var(--drag, 0px));
+  transition:transform .35s cubic-bezier(.22,.9,.32,1);
+  touch-action:pan-y;
+  cursor:grab;
+}
+.player-carousel-stage.dragging{ transition:none; cursor:grabbing; }
+
+.player-carousel-wave{
+  /* Sits higher than a plain "right below the images" placement (top:100%
+     would be) — the crest now peeks up near the images' own bottom edge, in
+     the gap the shrunk (scaled-down) side items leave around themselves,
+     without a tall reach down into the now-playing controls washing them out.
+     left + an explicit calc() width (not left+right+width:auto) cancels
+     .player-main's own horizontal padding so the wave reaches the true edges
+     of the player — <svg> is a replaced element, so width:auto would resolve
+     to an intrinsic default instead of stretching to fill left/right offsets
+     the way a normal block element does. */
   position:absolute;
-  top:clamp(22px, 3vw, 40px); left:clamp(24px, 3vw, 42px);
-  max-width:52%;
-  z-index:2;
+  left:calc(-1 * clamp(20px,2.6vw,34px));
+  width:calc(100% + 2 * clamp(20px,2.6vw,34px));
+  top:88%;
+  height:90%;
+  pointer-events:none;
+  z-index:0;
 }
-.queue-label{
-  font-family:var(--font-body);
-  font-size:clamp(11px, 1vw, 14px);
-  letter-spacing:0.22em;
-  text-transform:uppercase;
-  color:var(--gold);
-  margin-bottom:10px;
-  opacity:0.9;
-}
-#queueList{
-  list-style:none; margin:0; padding:0;
-  display:flex; flex-direction:column; gap:2px;
-}
-#queueList li{
-  display:flex; align-items:baseline; gap:10px;
-  padding:5px 8px 5px 2px;
-  border-radius:6px;
+/* Tied to the same --pl-accent the rest of the player's theme uses (flips
+   with the palette via .player.light), instead of a hardcoded white JS sets
+   per song — this is what "follow the background ruleset" means here. */
+/* --pl-wave-a/b come from the current song's own extracted palette (set in
+   applyPlayerBackground, script.js) — the same two colors the background
+   gradient uses — so the wave is always built from that song's palette
+   rather than a fixed theme color. Falls back to --pl-accent before the
+   first song has ever loaded a palette. */
+.player-carousel-wave path{ fill:var(--pl-wave-a, var(--pl-accent)); opacity:0.85; }
+.player-carousel-wave path:last-child{ fill:var(--pl-wave-b, var(--pl-accent)); opacity:0.6; }
+
+.player-carousel-item{
+  position:absolute; top:50%; left:50%;
+  height:100%;
+  max-width:min(92%, 1000px);
+  aspect-ratio:4/3;
+  transition:transform .5s cubic-bezier(.22,.9,.32,1), opacity .5s ease;
   cursor:pointer;
-  transition:background 0.2s ease, opacity 0.4s ease, transform 0.4s ease;
+  z-index:1;
 }
-#queueList li:hover{ background:rgba(255,255,255,0.06); }
-#queueList li:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
-#queueList .roman{
-  font-family:var(--font-display);
-  font-style:italic;
-  font-size:14px;
-  color:var(--gold);
-  width:22px;
-  flex-shrink:0;
-  opacity:0.85;
+.player-carousel-item-inner{
+  position:relative;
+  width:100%; height:100%;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 24px 50px -18px rgba(0,0,0,.45);
+  animation:playerCarouselFloat 4.6s ease-in-out infinite;
+  animation-delay:calc(var(--i, 0) * -0.6s);
 }
-#queueList .meta{ min-width:0; }
-#queueList .qtitle{
-  font-family:var(--font-display);
-  font-size:clamp(18px, 1.7vw, 27px);
-  line-height:1.15;
-  color:var(--parchment);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.player-carousel-item.is-active .player-carousel-item-inner{
+  box-shadow:0 30px 70px -18px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.25);
 }
-#queueList .qartist{
-  font-size:clamp(11px, 0.95vw, 14px);
-  color:var(--parchment-dim);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.player-carousel-item-inner svg, .player-carousel-item-inner img{
+  position:absolute; inset:0; width:100%; height:100%; display:block;
 }
-#queueList li.entering{ opacity:0; transform:translateY(-6px); }
+.player-carousel-item-inner img{ object-fit:cover; object-position:center; }
+.player-carousel-item .play-overlay{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(10,8,7,.35);
+  opacity:0; transition:opacity .2s ease;
+}
+.player-carousel-item.is-active:hover .play-overlay{ opacity:1; }
+.player-carousel-item .play-overlay svg{ width:30px; height:30px; fill:#fff; }
+
+@keyframes playerCarouselFloat{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-6%); }
+}
 
 /* now playing */
 .now-playing{
-  position:absolute;
-  left:0; right:0; bottom:0;
-  z-index:2;
-  padding:0 clamp(28px, 3.4vw, 46px) clamp(24px, 3vw, 40px);
+  position:relative;
+  z-index:1;
+  width:100%;
+  /* Wide enough to nearly fill .player-main's own padded content box on
+     typical windows — the album chip is anchored to this block's left edge,
+     so the closer this gets to player-main's actual width, the further left
+     the chip sits (an earlier, much narrower 1000px cap was leaving a big
+     empty gap between the chip and the player's true left edge). */
+  max-width:1400px;
+  text-align:center;
+  flex:0 0 auto;
 }
-.track-meta{ margin-bottom:14px; }
+/* Anchored to the near-left corner of the (now much wider) now-playing block,
+   independent of the centered title/progress bar below it — sized like an
+   actual album tile rather than a small inline icon. */
+.album-chip{
+  position:absolute;
+  left:0; top:clamp(-56px,-4.5vw,-34px);
+  display:flex; align-items:center; gap:12px;
+  text-align:left;
+  max-width:min(45%, 320px);
+}
+.album-chip-art{
+  position:relative;
+  width:clamp(56px, 6.5vw, 92px);
+  aspect-ratio:1/1;
+  border-radius:12px;
+  overflow:hidden;
+  flex-shrink:0;
+  box-shadow:0 6px 16px -4px rgba(0,0,0,.4);
+}
+.album-chip-art svg, .album-chip-art img{
+  position:absolute; inset:0; width:100%; height:100%; display:block;
+}
+.album-chip-art img{ object-fit:cover; object-position:center; }
+.album-chip-name{
+  font-family:var(--font-body);
+  font-size:clamp(14px, 1.3vw, 17px);
+  color:var(--pl-fg);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  min-width:0;
+  transition:color .5s ease;
+}
+.track-meta{ margin-bottom:12px; }
 .track-title{
   font-family:var(--font-display);
   font-style:italic;
   font-weight:600;
-  font-size:clamp(28px,4.3vw,54px);
+  font-size:clamp(22px,3.2vw,38px);
   line-height:1.1;
+  color:var(--pl-fg);
+  transition:color .5s ease;
 }
-.track-artist{
-  font-size:clamp(13px, 1.1vw, 17px);
-  letter-spacing:0.04em;
-  color:var(--parchment-dim);
-  margin-top:4px;
-}
-.album-tag{
-  display:inline-block;
-  font-size:11px;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--gold);
-  opacity:.85;
-  margin-top:6px;
-}
-.now-playing-edit-btn{
-  display:block;
-  margin-top:10px;
-  background:none;
-  border:1px solid rgba(201,169,97,.3);
-  color:var(--parchment-dim);
-  font-size:11px;
-  letter-spacing:.04em;
-  padding:4px 12px;
-  border-radius:14px;
-  cursor:pointer;
-  transition:color .2s ease, border-color .2s ease, background .2s ease;
-}
-.now-playing-edit-btn:hover{ color:var(--gold); border-color:rgba(201,169,97,.55); background:rgba(201,169,97,.08); }
-.now-playing-edit-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
 .progress-row{
   display:flex; align-items:center; gap:10px;
-  margin-bottom:16px;
+  margin-bottom:10px;
+  /* Set by JS (renderAlbumChipArt) to the chip's actual measured width, so
+     the bar starts clear of it instead of running underneath. */
+  margin-left:var(--chip-inset, 0px);
 }
 .progress-row span{
   font-size:11px;
   font-variant-numeric:tabular-nums;
-  color:var(--parchment-dim);
+  color:var(--pl-fg-dim);
   width:34px;
+  transition:color .5s ease;
 }
 .progress-row span:last-child{ text-align:right; }
 .progress-track{
   flex:1; height:3px;
-  background:rgba(255,255,255,0.18);
+  background:var(--pl-track-bg);
   border-radius:2px;
   cursor:pointer;
   position:relative;
+  transition:background .5s ease;
 }
 .progress-fill{
   position:absolute; left:0; top:0; bottom:0;
   width:0%;
-  background:var(--gold);
+  background:var(--pl-accent);
   border-radius:2px;
+  transition:background .5s ease;
 }
 .progress-fill::after{
   content:'';
   position:absolute; right:-4px; top:50%; transform:translateY(-50%);
   width:9px; height:9px; border-radius:50%;
-  background:var(--gold);
-  box-shadow:0 0 0 3px rgba(201,169,97,0.18);
+  background:var(--pl-accent);
+  box-shadow:0 0 0 3px var(--pl-ctrl-bg);
+  transition:background .5s ease, box-shadow .5s ease;
 }
 
-.controls-row{
-  display:flex; align-items:center; justify-content:center; gap:22px;
-}
 .ctrl-btn{
   background:none; border:none; cursor:pointer;
-  color:var(--parchment);
+  color:var(--pl-fg);
   display:flex; align-items:center; justify-content:center;
-  width:clamp(38px, 4vw, 54px); height:clamp(38px, 4vw, 54px);
+  width:clamp(32px, 3.2vw, 44px); height:clamp(32px, 3.2vw, 44px);
   border-radius:50%;
-  transition:color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  transition:color 0.5s ease, background 0.2s ease, transform 0.15s ease;
 }
 .ctrl-btn:hover{ transform:translateY(-1px); }
-.ctrl-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
-.ctrl-btn svg{ width:clamp(20px, 2vw, 27px); height:clamp(20px, 2vw, 27px); }
-.ctrl-btn.small svg{ width:clamp(17px, 1.7vw, 23px); height:clamp(17px, 1.7vw, 23px); }
+.ctrl-btn:focus-visible{ outline:2px solid var(--pl-accent); outline-offset:2px; }
+.ctrl-btn svg{ width:clamp(17px, 1.6vw, 22px); height:clamp(17px, 1.6vw, 22px); }
+.ctrl-btn.small svg{ width:clamp(14px, 1.4vw, 19px); height:clamp(14px, 1.4vw, 19px); }
 .ctrl-btn.active{ color:var(--rose); }
-.play-btn{
-  width:clamp(56px, 6vw, 80px); height:clamp(56px, 6vw, 80px);
-  background:var(--rose);
-  color:var(--ink);
-}
-.play-btn:hover{ background:#d06588; }
-.play-btn svg{ width:clamp(22px, 2.4vw, 32px); height:clamp(22px, 2.4vw, 32px); }
+/* Play/pause is just a .ctrl-btn now — same size, no fill, same outline-style
+   icon language as the other transport buttons (previously a bigger solid
+   filled circle). */
 
 @media (max-width:560px){
   body{ padding:0; min-height:100dvh; }
@@ -650,51 +632,37 @@ body{
     top:calc(18px + env(safe-area-inset-top)); right:calc(16px + env(safe-area-inset-right));
   }
   .back-btn span{ display:none; }
-  .queue-panel{
-    max-width:70%;
-    top:calc(64px + env(safe-area-inset-top));
-    max-height:34vh;
-    overflow-y:auto;
+  .corner-controls-left{
+    top:calc(18px + env(safe-area-inset-top)); left:calc(16px + env(safe-area-inset-left));
+    gap:6px;
   }
-  #queueList .qtitle{ font-size:16px; }
-  .controls-row{ gap:14px; }
   .album-grid{ grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); }
   .song-row-album{ display:none; }
-  .now-playing{ padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+  .player-main{
+    padding:calc(56px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+    gap:8px;
+  }
+  .player-carousel-item{ max-width:min(94%, 460px); }
   .track-title{
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden;
   }
+  /* The absolutely-positioned left-corner chip works on desktop because the
+     now-playing block is wide relative to the chip; on a narrow phone it
+     would sit right under the centered title text. Drop it back into normal
+     flow, left-aligned, above the title instead. */
+  .album-chip{
+    position:static;
+    max-width:none;
+    justify-content:flex-start;
+    margin-bottom:10px;
+  }
+  .album-chip-art{ width:44px; }
+  /* Chip is back in normal flow above the title here, so the progress row
+     doesn't need the desktop layout's left inset for it. */
+  .progress-row{ margin-left:0; }
 
   .upload-overlay{
     padding:calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
   }
-
-  .lyrics-panel{
-    position:absolute;
-    top:calc(64px + env(safe-area-inset-top)); left:16px; right:16px; width:auto; max-width:none;
-    min-height:34vh;
-    max-height:calc(100dvh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    background:rgba(10,8,7,0.82);
-    border-radius:12px;
-    padding:16px 18px;
-    backdrop-filter:blur(6px);
-    display:none;
-  }
-  .lyrics-panel.open{ display:block; }
-  .lyrics-toggle-btn{
-    display:flex; align-items:center; gap:6px;
-    position:absolute; top:calc(18px + env(safe-area-inset-top)); left:calc(16px + env(safe-area-inset-left));
-    z-index:3;
-    background:rgba(20,16,15,0.55);
-    border:1px solid rgba(201,169,97,.35);
-    color:var(--parchment);
-    border-radius:20px;
-    padding:7px 14px 7px 10px;
-    font-family:var(--font-body);
-    font-size:12px; letter-spacing:.05em;
-    cursor:pointer;
-    backdrop-filter:blur(4px);
-  }
-  .lyrics-toggle-btn svg{ width:15px; height:15px; }
 }

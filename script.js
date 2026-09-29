@@ -4,10 +4,6 @@
   // image: optional. Leave it out (or set to null) to fall back to the generated landscape art.
   // album: which album this track belongs to. Leave it out (or set to null) and it will
   //        land in a "Singles" catch-all album so nothing gets lost.
-  // lyrics: optional. Paste the lyrics as a backtick string, one line per line of text, e.g.
-  //         lyrics: `First line here
-  //         Second line here`
-  //         Leave it as "" and the lyrics panel will just say "No lyrics added yet."
     const trackData = [
   ];
 
@@ -16,13 +12,9 @@
       const clean = url.split('?')[0];
       const raw = decodeURIComponent(clean.substring(clean.lastIndexOf('/') + 1));
       const noExt = raw.replace(/\.[^/.]+$/, '');
-      const parts = noExt.split(/\s*-\s*/);
-      if (parts.length >= 2){
-        return { artist: titleCase(parts[0]), title: titleCase(parts.slice(1).join(' - ')) };
-      }
-      return { artist: 'Unknown Artist', title: titleCase(noExt) };
+      return { title: titleCase(noExt) };
     } catch(e){
-      return { artist: 'Unknown Artist', title: url };
+      return { title: url };
     }
   }
   function titleCase(s){
@@ -38,7 +30,7 @@
 
   const baseSongs = trackData.map((t, i) => {
     const meta = parseFilename(t.audio);
-    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', lyrics: t.lyrics || '', title:meta.title, artist:meta.artist, dur:null, uploaded:false, addedAt: t.addedAt || 0, holiday: !!t.holiday };
+    return { id:i, url:t.audio, image:t.image || null, album: t.album || 'Instrumentals', title:meta.title, dur:null, uploaded:false, addedAt: t.addedAt || 0, holiday: !!t.holiday };
   });
 
   // "Recently Added" and "Holiday" are computed automatically (see
@@ -59,16 +51,6 @@
   function getHolidayIds(){
     return songs.filter(s => s.holiday).map(s => s.id);
   }
-
-  // Lyrics added through the app's own editor are saved in this browser and
-  // take priority over anything hardcoded in trackData above.
-  const LYRICS_KEY_PREFIX = 'aether-lyrics-';
-  baseSongs.forEach(song => {
-    try {
-      const stored = localStorage.getItem(LYRICS_KEY_PREFIX + song.id);
-      if (stored !== null) song.lyrics = stored;
-    } catch(e){ /* localStorage unavailable — code defaults still work */ }
-  });
 
   // Songs added through the "Add Music" panel (see the Uploads section below)
   // live only in this browser's IndexedDB and are merged in alongside the
@@ -104,7 +86,6 @@
   rebuildSongs();
 
   const liked = new Set();
-  const added = new Set();
 
   let queue = songs.map(s => s.id);
   let pos = 0;
@@ -119,14 +100,6 @@
   const songListView = document.getElementById('songListView');
   const tabBtns = document.querySelectorAll('.tab-btn');
   const backBtn = document.getElementById('backBtn');
-  const lyricsPanel = document.getElementById('lyricsPanel');
-  const lyricsText = document.getElementById('lyricsText');
-  const lyricsToggleBtn = document.getElementById('lyricsToggleBtn');
-  const lyricsEditBtn = document.getElementById('lyricsEditBtn');
-  const lyricsEditor = document.getElementById('lyricsEditor');
-  const lyricsEditActions = document.getElementById('lyricsEditActions');
-  const lyricsSaveBtn = document.getElementById('lyricsSaveBtn');
-  const lyricsCancelBtn = document.getElementById('lyricsCancelBtn');
 
   const addMusicBtn = document.getElementById('addMusicBtn');
   const uploadOverlay = document.getElementById('uploadOverlay');
@@ -134,7 +107,6 @@
   const uploadAudioInput = document.getElementById('uploadAudioInput');
   const uploadImageInput = document.getElementById('uploadImageInput');
   const uploadTitleInput = document.getElementById('uploadTitleInput');
-  const uploadArtistInput = document.getElementById('uploadArtistInput');
   const uploadAlbumInput = document.getElementById('uploadAlbumInput');
   const uploadHolidayInput = document.getElementById('uploadHolidayInput');
   const uploadSaveBtn = document.getElementById('uploadSaveBtn');
@@ -157,29 +129,26 @@
   const editSongCoverCurrent = document.getElementById('editSongCoverCurrent');
   const editSongRemoveCoverBtn = document.getElementById('editSongRemoveCoverBtn');
   const editSongTitleInput = document.getElementById('editSongTitleInput');
-  const editSongArtistInput = document.getElementById('editSongArtistInput');
   const editSongAlbumInput = document.getElementById('editSongAlbumInput');
   const editSongHolidayInput = document.getElementById('editSongHolidayInput');
   const editSongSaveBtn = document.getElementById('editSongSaveBtn');
   const editSongProgress = document.getElementById('editSongProgress');
-  const nowPlayingEditBtn = document.getElementById('nowPlayingEditBtn');
 
-  const svg = document.getElementById('landscape');
-  const landscapeImg = document.getElementById('landscapeImg');
-  const artLayer = document.getElementById('artLayer');
-  const queueList = document.getElementById('queueList');
+  const playerCarouselStage = document.getElementById('playerCarouselStage');
   const trackTitle = document.getElementById('trackTitle');
-  const trackArtist = document.getElementById('trackArtist');
+  const albumChipSvg = document.getElementById('albumChipSvg');
+  const albumChipImg = document.getElementById('albumChipImg');
   const albumTag = document.getElementById('albumTag');
+  const albumChip = document.getElementById('albumChip');
+  const progressRow = document.getElementById('progressRow');
   const progressFill = document.getElementById('progressFill');
   const progressTrack = document.getElementById('progressTrack');
   const curTimeEl = document.getElementById('curTime');
   const totalTimeEl = document.getElementById('totalTime');
+  const likeBtn = document.getElementById('likeBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
   const playBtn = document.getElementById('playBtn');
   const playIcon = document.getElementById('playIcon');
-  const likeBtn = document.getElementById('likeBtn');
-  const addBtn = document.getElementById('addBtn');
-  const shuffleBtn = document.getElementById('shuffleBtn');
 
   function mulberry32(seed){
     return function(){
@@ -255,10 +224,6 @@
     return defs + out;
   }
 
-  function buildLandscape(songId){
-    svg.innerHTML = landscapeMarkup(hashStr(String(songId)), 'main');
-  }
-
   function buildSkylineLayer(rnd, baseY, color, heightScale, widthScale){
     let x = -20;
     let d = `M -20 750 `;
@@ -278,13 +243,6 @@
     }
     d += `L 1230 750 Z`;
     return `<path d="${d}" fill="${color}"/>`;
-  }
-
-  function toRoman(num){
-    const map = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
-    let res = '';
-    for (const [v,s] of map){ while(num>=v){ res+=s; num-=v; } }
-    return res;
   }
 
   // ---------- Library (albums grid) ----------
@@ -314,7 +272,6 @@
       row.innerHTML = `
         <div class="song-row-main">
           <div class="song-row-title">${song.title}</div>
-          <div class="song-row-artist">${song.artist}</div>
         </div>
         <div class="song-row-album">${Array.isArray(song.album) ? song.album.join(' / ') : song.album}</div>
         ${song.uploaded ? `<div class="song-row-actions">
@@ -342,23 +299,22 @@
   function openSong(songId){
     queue = songs.map(s => s.id);
     pos = queue.indexOf(songId);
-    renderVisual(getSong(queue[pos]));
+    // showPlayer() must run before renderAll(): renderAll measures the album
+    // chip's rendered width to inset the progress bar, and that measurement
+    // comes back 0 (permanently, since it's only recomputed when the album
+    // changes) if the player is still display:none at that point.
+    showPlayer();
     loadCurrentTrack(false);
     renderAll();
-    showPlayer();
     setPlaying(true);
   }
 
   tabBtns.forEach(btn => btn.addEventListener('click', () => {
     tabBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (btn.dataset.tab === 'albums'){
-      albumGrid.classList.remove('hidden');
-      songListView.classList.add('hidden');
-    } else {
-      albumGrid.classList.add('hidden');
-      songListView.classList.remove('hidden');
-    }
+    const tab = btn.dataset.tab;
+    albumGrid.classList.toggle('hidden', tab !== 'albums');
+    songListView.classList.toggle('hidden', tab !== 'songs');
   }));
 
   function makeAlbumCard(name, ids, isAll){
@@ -455,10 +411,9 @@
   function openAlbum(ids){
     queue = ids.slice();
     pos = 0;
-    renderVisual(getSong(queue[pos]));
+    showPlayer();
     loadCurrentTrack(false);
     renderAll();
-    showPlayer();
     setPlaying(true);
   }
 
@@ -472,7 +427,6 @@
     libraryView.classList.remove('hidden');
   }
   backBtn.addEventListener('click', showLibrary);
-  lyricsToggleBtn.addEventListener('click', () => lyricsPanel.classList.toggle('open'));
 
   // ---------- Uploads (your own songs, stored in this browser only) ----------
   // Uploaded audio/cover files are kept as Blobs in IndexedDB (localStorage
@@ -528,7 +482,7 @@
     });
   }
 
-  // Merges `updates` (title/artist/album/imageBlob) into an existing upload
+  // Merges `updates` (title/album/imageBlob) into an existing upload
   // record and persists it, so edits made after the initial upload stick.
   async function updateUploadRecord(dbKey, updates){
     const db = await openUploadsDB();
@@ -592,9 +546,7 @@
       url: URL.createObjectURL(record.audioBlob),
       image: record.imageBlob ? URL.createObjectURL(record.imageBlob) : null,
       album: record.album || 'Uploads',
-      lyrics: record.lyrics || '',
       title: record.title,
-      artist: record.artist,
       dur: null,
       uploaded: true,
       addedAt: record.addedAt || 0,
@@ -661,7 +613,6 @@
     uploadAudioInput.value = '';
     uploadImageInput.value = '';
     uploadTitleInput.value = '';
-    uploadArtistInput.value = '';
     uploadAlbumInput.value = '';
     uploadHolidayInput.checked = false;
     uploadBulkAudioInput.value = '';
@@ -683,7 +634,6 @@
     if (!file) return;
     const parsed = parseFilename(file.name);
     if (!uploadTitleInput.value.trim()) uploadTitleInput.value = parsed.title;
-    if (!uploadArtistInput.value.trim()) uploadArtistInput.value = parsed.artist;
   });
 
   // Best-effort cover matching for bulk imports: normalize both the parsed
@@ -720,7 +670,7 @@
       const image = matchImageForTitle(parsed.title, imageFiles);
       return `<div class="upload-bulk-row">
         <span class="upload-bulk-title">${parsed.title}</span>
-        <span class="upload-bulk-sub">${parsed.artist} · ${image ? 'cover: ' + image.name : 'no cover match'}</span>
+        <span class="upload-bulk-sub">${image ? 'cover: ' + image.name : 'no cover match'}</span>
       </div>`;
     }).join('');
   }
@@ -737,9 +687,7 @@
     const parsed = parseFilename(audioFile.name);
     const record = {
       title: uploadTitleInput.value.trim() || parsed.title,
-      artist: uploadArtistInput.value.trim() || parsed.artist,
       album: uploadAlbumInput.value.trim() || 'Uploads',
-      lyrics: '',
       audioBlob: audioFile,
       imageBlob: imageFile,
       addedAt: Date.now(),
@@ -773,9 +721,7 @@
       const parsed = parseFilename(audioFile.name);
       const record = {
         title: parsed.title,
-        artist: parsed.artist,
         album,
-        lyrics: '',
         audioBlob: audioFile,
         imageBlob: matchImageForTitle(parsed.title, imageFiles),
         addedAt: Date.now(),
@@ -824,7 +770,6 @@
     editSongRemoveCoverFlag = false;
     editSongImageInput.value = '';
     editSongTitleInput.value = song.title;
-    editSongArtistInput.value = song.artist;
     editSongAlbumInput.value = Array.isArray(song.album) ? song.album.join(', ') : song.album;
     editSongCoverCurrent.classList.toggle('hidden', !song.image);
     editSongHolidayInput.checked = !!song.holiday;
@@ -863,7 +808,6 @@
     try {
       const updates = {
         title: editSongTitleInput.value.trim() || song.title,
-        artist: editSongArtistInput.value.trim() || song.artist,
         album: editSongAlbumInput.value.trim() || 'Uploads',
         holiday: editSongHolidayInput.checked,
       };
@@ -874,7 +818,6 @@
       const record = await updateUploadRecord(song.dbKey, updates);
       if (song.image) URL.revokeObjectURL(song.image);
       song.title = record.title;
-      song.artist = record.artist;
       song.album = record.album;
       song.holiday = !!record.holiday;
       song.image = record.imageBlob ? URL.createObjectURL(record.imageBlob) : null;
@@ -882,7 +825,7 @@
       rebuildSongs();
       renderLibrary();
       if (!playerView.classList.contains('hidden') && queue[pos] === song.id){
-        renderVisual(song);
+        invalidatePlayerCarouselItem(song.id);
         renderAll();
       }
       closeEditSongPanel();
@@ -893,8 +836,6 @@
       editSongProgress.textContent = '';
     }
   });
-
-  nowPlayingEditBtn.addEventListener('click', () => openEditSongPanel(getSong(queue[pos])));
 
   async function removeUpload(song){
     if (!confirm(`Remove "${song.title}" from your library?`)) return;
@@ -915,116 +856,308 @@
 
   // ---------- Player ----------
 
-  function renderQueueList(){
-    queueList.innerHTML = '';
-    const count = Math.min(4, queue.length - 1);
-    for (let i=1;i<=count;i++){
-      const songId = queue[(pos+i) % queue.length];
-      const song = getSong(songId);
-      const li = document.createElement('li');
-      li.className = 'entering';
-      li.tabIndex = 0;
-      li.innerHTML = `<span class="roman">${toRoman(i)}</span>
-        <span class="meta">
-          <div class="qtitle">${song.title}</div>
-          <div class="qartist">${song.artist}</div>
-        </span>`;
-      const targetPos = (pos+i) % queue.length;
-      li.addEventListener('click', () => jumpTo(targetPos));
-      li.addEventListener('keydown', e => { if (e.key==='Enter') jumpTo(targetPos); });
-      queueList.appendChild(li);
-      requestAnimationFrame(() => li.classList.remove('entering'));
+  // Cheap guard against reloading the album art on every timeupdate tick —
+  // renderNowPlaying fires ~4x/sec while playing, but the chip's art only
+  // ever needs to change when the song's (first) album actually changes.
+  let lastAlbumChipKey = null;
+  function renderAlbumChipArt(primaryAlbum){
+    if (primaryAlbum === lastAlbumChipKey) return;
+    lastAlbumChipKey = primaryAlbum;
+    const seed = hashStr(String(primaryAlbum));
+    const uid = 'achip' + Math.abs(seed);
+    // An explicit album cover wins; otherwise fall back to the first song in
+    // this album that has its own picture, same as the player carousel does,
+    // so the chip still shows something meaningful for the common case where
+    // no one ever set an album-level cover.
+    const explicitCover = albumCoverOverrides.get(primaryAlbum) || albumCovers[primaryAlbum];
+    const albumSongIds = albumMap.get(primaryAlbum) || [];
+    const fallbackSong = albumSongIds.map(getSong).find(s => s && s.image);
+    const coverUrl = explicitCover || (fallbackSong ? fallbackSong.image : null);
+    if (coverUrl){
+      albumChipSvg.style.display = 'none';
+      albumChipImg.style.display = 'block';
+      albumChipImg.src = coverUrl;
+      albumChipImg.onerror = () => {
+        albumChipImg.style.display = 'none';
+        albumChipSvg.style.display = 'block';
+        albumChipSvg.innerHTML = landscapeMarkup(seed, uid);
+      };
+    } else {
+      albumChipImg.style.display = 'none';
+      albumChipSvg.style.display = 'block';
+      albumChipSvg.innerHTML = landscapeMarkup(seed, uid);
     }
+    // The chip is absolutely positioned over the near-left corner of
+    // now-playing so the title can stay centered regardless of its width, but
+    // that means the progress row below needs its own left inset — sized to
+    // the chip's actual rendered width (which varies with the album name) —
+    // or the wide progress bar would run underneath it, right where curTime
+    // renders. A CSS var (rather than setting margin-left directly) lets the
+    // mobile layout's plain override win via source order, since that
+    // breakpoint drops the chip back into normal flow above the title instead.
+    progressRow.style.setProperty('--chip-inset', (albumChip.offsetWidth + 20) + 'px');
   }
 
   function renderNowPlaying(){
     const song = getSong(queue[pos]);
     trackTitle.textContent = song.title;
-    trackArtist.textContent = song.artist;
-    albumTag.textContent = Array.isArray(song.album) ? song.album.join(' / ') : song.album;
+    const albumNames = Array.isArray(song.album) ? song.album : [song.album];
+    albumTag.textContent = albumNames.join(' / ');
+    renderAlbumChipArt(albumNames[0]);
     totalTimeEl.textContent = fmt(song.dur);
     curTimeEl.textContent = fmt(audio.currentTime);
     const pct = song.dur ? (audio.currentTime / song.dur) * 100 : 0;
     progressFill.style.width = pct + '%';
     likeBtn.classList.toggle('active', liked.has(song.id));
-    addBtn.classList.toggle('active', added.has(song.id));
-    nowPlayingEditBtn.classList.toggle('hidden', !song.uploaded);
   }
 
-  function renderVisual(song){
+  // ---------- Player carousel ----------
+  // The carousel IS the player's main visual: each item is a song from the
+  // current queue, and the whole player background follows whichever one is
+  // centered (see applyPlayerBackground). Only a small window around `pos` is
+  // ever built — the queue can be the entire library, and there's no reason
+  // to load/sample images for songs that aren't within a step or two of view.
+
+  const playerCarouselCache = new Map(); // song id -> DOM element
+  const songPalette = new Map(); // song id -> { bg1, bg2, useDarkText }
+
+  function getPlayerWindowIndices(){
+    const n = queue.length;
+    if (!n) return [];
+    const span = Math.min(2, Math.floor((n - 1) / 2));
+    const idxs = new Set();
+    for (let d = -span; d <= span; d++) idxs.add(((pos + d) % n + n) % n);
+    return Array.from(idxs);
+  }
+
+  // Blends a sampled color toward white for a soft pastel wash while keeping some of its hue.
+  function mixToPastel([r, g, b], amt){
+    const mr = Math.round(r + (255 - r) * amt);
+    const mg = Math.round(g + (255 - g) * amt);
+    const mb = Math.round(b + (255 - b) * amt);
+    return `rgb(${mr}, ${mg}, ${mb})`;
+  }
+
+  // No picture to sample from — fall back to a moody dark gradient in the same
+  // hue family as this song's generated skyline art, instead of a pastel one,
+  // so the "no cover" case still matches the app's default dark theme.
+  function setSongPaletteFromSeed(song){
+    const seed = hashStr(String(song.id));
+    const rnd = mulberry32(seed * 977 + 13);
+    const hue = 250 + Math.floor(rnd() * 70);
+    songPalette.set(song.id, {
+      bg1: `hsl(${hue}, 30%, 15%)`,
+      bg2: `hsl(${(hue + 300) % 360}, 24%, 8%)`,
+      useDarkText: false
+    });
+    if (queue[pos] === song.id) applyPlayerBackground(song);
+  }
+
+  // Samples the loaded cover image on an offscreen canvas to pull its palette. Falls back
+  // to setSongPaletteFromSeed if the image is a cross-origin file the canvas can't read
+  // back (getImageData throws SecurityError).
+  function updateSongPaletteFromImage(song, imgEl){
+    try {
+      const w = 28, h = 28;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imgEl, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      let bestSat = -1, sr = 0, sg = 0, sb = 0;
+      for (let i = 0; i < data.length; i += 4){
+        if (data[i + 3] < 128) continue;
+        const rr = data[i], gg = data[i + 1], bb = data[i + 2];
+        r += rr; g += gg; b += bb; count++;
+        const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb);
+        const sat = mx === 0 ? 0 : (mx - mn) / mx;
+        if (sat > bestSat && mx > 30){ bestSat = sat; sr = rr; sg = gg; sb = bb; }
+      }
+      if (!count) throw new Error('empty image sample');
+      const avg = [r / count, g / count, b / count];
+      const accent = bestSat >= 0 ? [sr, sg, sb] : avg;
+      const luminance = (0.299 * avg[0] + 0.587 * avg[1] + 0.114 * avg[2]) / 255;
+      songPalette.set(song.id, {
+        bg1: mixToPastel(avg, 0.4),
+        bg2: mixToPastel(accent, 0.5),
+        useDarkText: luminance > 0.55
+      });
+    } catch(e){
+      setSongPaletteFromSeed(song);
+      return;
+    }
+    if (queue[pos] === song.id) applyPlayerBackground(song);
+  }
+
+  function applyPlayerBackground(song){
+    const p = songPalette.get(song.id);
+    if (!p) return;
+    playerView.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
+    // The wave's fill comes from these same two colors (see
+    // .player-carousel-wave path in styles.css), not a generic theme accent —
+    // that's what makes it actually follow the background's per-song palette
+    // instead of just flipping between two fixed light/dark states.
+    playerView.style.setProperty('--pl-wave-a', p.bg1);
+    playerView.style.setProperty('--pl-wave-b', p.bg2);
+    playerView.classList.toggle('light', p.useDarkText);
+  }
+
+  function buildPlayerCarouselItemEl(song, uidSuffix){
+    const wrap = document.createElement('div');
+    wrap.className = 'player-carousel-item';
+    wrap.dataset.songId = String(song.id);
+    wrap.innerHTML = `
+      <div class="player-carousel-item-inner">
+        <svg viewBox="0 0 1200 750" preserveAspectRatio="xMidYMid slice"></svg>
+        <img alt="" style="display:none;">
+        <div class="play-overlay"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l13 7-13 7z"/></svg></div>
+      </div>`;
+    const svgEl = wrap.querySelector('svg');
+    const imgEl = wrap.querySelector('img');
+    const seed = hashStr(String(song.id));
+    const uid = 'plr' + Math.abs(seed) + uidSuffix;
     if (song.image){
-      svg.style.display = 'none';
-      landscapeImg.style.display = 'block';
-      landscapeImg.src = song.image;
-      landscapeImg.onerror = () => {
-        // image failed to load — fall back to generated art instead of a broken image
-        landscapeImg.style.display = 'none';
-        svg.style.display = 'block';
-        buildLandscape(song.id);
+      imgEl.style.display = 'block';
+      // Try CORS mode first so the canvas isn't tainted and the real palette can be
+      // sampled; a host that doesn't send CORS headers (e.g. some Dropbox links)
+      // fails to load in that mode, so retry once without it — the photo still has
+      // to display even when we can't read its pixels back.
+      imgEl.crossOrigin = 'anonymous';
+      imgEl.onload = () => updateSongPaletteFromImage(song, imgEl);
+      imgEl.onerror = () => {
+        imgEl.crossOrigin = null;
+        imgEl.onload = () => setSongPaletteFromSeed(song);
+        imgEl.onerror = () => {
+          imgEl.style.display = 'none';
+          svgEl.innerHTML = landscapeMarkup(seed, uid);
+          setSongPaletteFromSeed(song);
+        };
+        imgEl.src = song.image;
       };
+      imgEl.src = song.image;
     } else {
-      landscapeImg.style.display = 'none';
-      svg.style.display = 'block';
-      buildLandscape(song.id);
+      svgEl.innerHTML = landscapeMarkup(seed, uid);
+      setSongPaletteFromSeed(song);
     }
+    return wrap;
   }
 
-  function crossfadeVisual(){
-    artLayer.classList.add('fading');
-    setTimeout(() => {
-      renderVisual(getSong(queue[pos]));
-      artLayer.classList.remove('fading');
-    }, 260);
+  function positionPlayerCarouselItems(){
+    const n = queue.length;
+    if (!n) return;
+    playerCarouselCache.forEach((el, songId) => {
+      const idx = queue.indexOf(songId);
+      if (idx === -1){ el.remove(); playerCarouselCache.delete(songId); return; }
+      let d = idx - pos;
+      if (d > n / 2) d -= n;
+      if (d < -n / 2) d += n;
+      const abs = Math.abs(d);
+      el.style.setProperty('--i', idx);
+      el.classList.toggle('is-active', d === 0);
+      // Only the active item plus its immediate neighbor on each side stay visible
+      // (a 3-up coverflow) — anything further out is fully hidden and untargetable
+      // so stray clicks/taps can't land on it.
+      if (abs > 1){
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.transform = `translate(-50%,-50%) translateX(${d * 130}%) scale(0.5)`;
+        el.style.zIndex = '0';
+      } else {
+        el.style.opacity = abs === 0 ? '1' : '0.55';
+        el.style.pointerEvents = 'auto';
+        const scale = abs === 0 ? 1 : 0.62;
+        // With Up Next and Lyrics both gone, nothing else floats over the
+        // carousel, so neighbors can peek all the way to the player's edges —
+        // the cropped-at-the-edges coverflow look from the reference design.
+        el.style.transform = `translate(-50%,-50%) translateX(${d * 62}%) scale(${scale})`;
+        el.style.zIndex = String(10 - abs);
+      }
+    });
   }
 
-  function renderLyrics(song){
-    exitLyricsEdit();
-    if (song.lyrics && song.lyrics.trim()){
-      lyricsText.textContent = song.lyrics;
-      lyricsText.classList.remove('empty');
-    } else {
-      lyricsText.textContent = 'No lyrics added yet.';
-      lyricsText.classList.add('empty');
+  function renderPlayerCarousel(){
+    if (!queue.length) return;
+    const windowIdxs = getPlayerWindowIndices();
+    const neededIds = new Set(windowIdxs.map(i => queue[i]));
+    for (const [id, el] of playerCarouselCache){
+      if (!neededIds.has(id)){ el.remove(); playerCarouselCache.delete(id); }
     }
-    lyricsPanel.scrollTop = 0;
+    windowIdxs.forEach(i => {
+      const id = queue[i];
+      if (!playerCarouselCache.has(id)){
+        const el = buildPlayerCarouselItemEl(getSong(id), i);
+        playerCarouselCache.set(id, el);
+        playerCarouselStage.appendChild(el);
+      }
+    });
+    positionPlayerCarouselItems();
+    const currentId = queue[pos];
+    if (songPalette.has(currentId)) applyPlayerBackground(getSong(currentId));
   }
 
-  function enterLyricsEdit(){
-    const song = getSong(queue[pos]);
-    lyricsEditor.value = song.lyrics || '';
-    lyricsText.classList.add('hidden');
-    lyricsEditBtn.classList.add('hidden');
-    lyricsEditor.classList.remove('hidden');
-    lyricsEditActions.classList.remove('hidden');
-    lyricsEditor.focus();
+  // Used when a currently-playing song's cover image is changed via the edit
+  // panel, so the carousel rebuilds that item with the new picture instead of
+  // keeping the stale cached element.
+  function invalidatePlayerCarouselItem(songId){
+    const el = playerCarouselCache.get(songId);
+    if (el){ el.remove(); playerCarouselCache.delete(songId); }
+    songPalette.delete(songId);
   }
 
-  function exitLyricsEdit(){
-    lyricsEditor.classList.add('hidden');
-    lyricsEditActions.classList.add('hidden');
-    lyricsText.classList.remove('hidden');
-    lyricsEditBtn.classList.remove('hidden');
-  }
-
-  lyricsEditBtn.addEventListener('click', enterLyricsEdit);
-  lyricsCancelBtn.addEventListener('click', exitLyricsEdit);
-  lyricsSaveBtn.addEventListener('click', () => {
-    const song = getSong(queue[pos]);
-    song.lyrics = lyricsEditor.value;
-    try { localStorage.setItem(LYRICS_KEY_PREFIX + song.id, song.lyrics); } catch(e){}
-    exitLyricsEdit();
-    if (song.lyrics && song.lyrics.trim()){
-      lyricsText.textContent = song.lyrics;
-      lyricsText.classList.remove('empty');
-    } else {
-      lyricsText.textContent = 'No lyrics added yet.';
-      lyricsText.classList.add('empty');
+  // Drag-to-swipe and tap-to-select both live in these pointer handlers rather
+  // than a separate 'click' listener per item: setPointerCapture (needed so a
+  // swipe that starts on an image still tracks correctly) retargets the native
+  // click event to playerCarouselStage itself, so per-item click handlers never
+  // fire for real pointer input. A tap is just a drag whose distance stayed
+  // under threshold.
+  let playerDragging = false, playerDragStartX = 0, playerDragDeltaX = 0, playerPointerDownItem = null;
+  playerCarouselStage.addEventListener('pointerdown', e => {
+    playerDragging = true;
+    playerDragStartX = e.clientX;
+    playerDragDeltaX = 0;
+    playerPointerDownItem = e.target.closest('.player-carousel-item');
+    playerCarouselStage.setPointerCapture(e.pointerId);
+    playerCarouselStage.classList.add('dragging');
+  });
+  playerCarouselStage.addEventListener('pointermove', e => {
+    if (!playerDragging) return;
+    playerDragDeltaX = e.clientX - playerDragStartX;
+    playerCarouselStage.style.setProperty('--drag', playerDragDeltaX + 'px');
+  });
+  function endPlayerDrag(){
+    if (!playerDragging) return;
+    playerDragging = false;
+    playerCarouselStage.classList.remove('dragging');
+    playerCarouselStage.style.setProperty('--drag', '0px');
+    const swipeThreshold = 50;
+    const tapThreshold = 6;
+    if (playerDragDeltaX > swipeThreshold) goPrev();
+    else if (playerDragDeltaX < -swipeThreshold) goNext();
+    else if (Math.abs(playerDragDeltaX) <= tapThreshold && playerPointerDownItem){
+      const songId = playerPointerDownItem.dataset.songId;
+      const idx = queue.findIndex(id => String(id) === songId);
+      if (idx !== -1){
+        if (idx === pos) setPlaying(!playing);
+        else jumpTo(idx);
+      }
     }
+    playerDragDeltaX = 0;
+    playerPointerDownItem = null;
+  }
+  playerCarouselStage.addEventListener('pointerup', endPlayerDrag);
+  playerCarouselStage.addEventListener('pointercancel', endPlayerDrag);
+
+  document.addEventListener('keydown', e => {
+    if (playerView.classList.contains('hidden')) return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') goPrev();
+    else if (e.key === 'ArrowRight') goNext();
   });
 
   function loadCurrentTrack(autoplay){
     const song = getSong(queue[pos]);
-    renderLyrics(song);
     audio.src = song.url;
     audio.currentTime = 0;
     audio.onloadedmetadata = () => {
@@ -1039,19 +1172,17 @@
 
   function renderAll(){
     renderNowPlaying();
-    renderQueueList();
+    renderPlayerCarousel();
   }
 
   function jumpTo(newPos){
     pos = newPos;
-    crossfadeVisual();
     loadCurrentTrack(playing);
     renderAll();
   }
 
   function goNext(){
     pos = (pos+1) % queue.length;
-    crossfadeVisual();
     loadCurrentTrack(playing);
     renderAll();
   }
@@ -1062,11 +1193,13 @@
       return;
     }
     pos = (pos-1+queue.length) % queue.length;
-    crossfadeVisual();
     loadCurrentTrack(playing);
     renderAll();
   }
 
+  // Play/pause and prev/next no longer have their own buttons — tapping the
+  // centered carousel image toggles play/pause, and swiping/tapping a
+  // peeking neighbor is prev/next — so this just drives the audio element.
   function setPlaying(v){
     playing = v;
     playIcon.innerHTML = playing
@@ -1093,12 +1226,6 @@
     liked.has(id) ? liked.delete(id) : liked.add(id);
     renderNowPlaying();
   });
-  addBtn.addEventListener('click', () => {
-    const id = getSong(queue[pos]).id;
-    added.has(id) ? added.delete(id) : added.add(id);
-    renderNowPlaying();
-  });
-
   shuffleBtn.addEventListener('click', () => {
     const currentId = queue[pos];
     const rest = queue.filter((_, i) => i !== pos);
@@ -1110,7 +1237,7 @@
     pos = 0;
     shuffleBtn.classList.add('active');
     setTimeout(() => shuffleBtn.classList.remove('active'), 900);
-    renderQueueList();
+    renderPlayerCarousel();
   });
 
   progressTrack.addEventListener('click', (e) => {
