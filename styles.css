@@ -30,12 +30,12 @@ body{
   overflow-y:auto;
   background:var(--ink-soft);
   border-radius:18px;
-  padding:clamp(28px,4vw,54px);
+  padding:clamp(22px,3.2vw,44px);
   box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,169,97,0.15);
 }
 .library-header{
   display:flex; align-items:baseline; justify-content:space-between;
-  margin-bottom:clamp(22px,3.2vw,38px);
+  margin-bottom:clamp(16px,2.4vw,28px);
 }
 .library-title{
   font-family:var(--font-display); font-style:italic; font-weight:600;
@@ -56,7 +56,7 @@ body{
 /* ---------- Library top actions + album carousel ---------- */
 .library-top-actions{
   display:flex; gap:12px;
-  margin-bottom:clamp(18px,2.4vw,28px);
+  margin-bottom:clamp(14px,1.8vw,20px);
 }
 .library-action-btn{
   display:flex; align-items:center; gap:7px;
@@ -88,11 +88,11 @@ body{
 
 .album-carousel{
   position:relative;
-  margin-bottom:clamp(18px,2.4vw,28px);
+  margin-bottom:clamp(10px,1.4vw,16px);
 }
 .album-carousel-stage{
   position:relative;
-  height:clamp(220px, 30vw, 360px);
+  height:clamp(180px, 22vw, 280px);
   transform:translateX(var(--drag, 0px));
   transition:transform .35s cubic-bezier(.22,.9,.32,1);
   touch-action:pan-y;
@@ -158,7 +158,7 @@ body{
 
 .album-carousel-caption{
   text-align:center;
-  margin-top:clamp(14px,2vw,22px);
+  margin-top:clamp(10px,1.4vw,16px);
 }
 .album-carousel-name{
   font-family:var(--font-display); font-style:italic; font-weight:600;

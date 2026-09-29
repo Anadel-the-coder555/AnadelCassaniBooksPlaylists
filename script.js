@@ -529,6 +529,30 @@
   albumCarouselStage.addEventListener('pointerup', endLibraryDrag);
   albumCarouselStage.addEventListener('pointercancel', endLibraryDrag);
 
+  // Actual scroll/trackpad input, alongside (not instead of) the drag-to-swipe
+  // and tap-to-select above. Trackpads send a horizontal two-finger swipe as
+  // deltaX; a plain vertical mouse wheel is treated the same way here so it
+  // still does something useful over the carousel. preventDefault stops that
+  // gesture from also scrolling .library-view itself while it's over the
+  // carousel. Accumulates delta and fires at most once per ~300ms so one
+  // continuous swipe doesn't fly through several albums at once.
+  let libraryWheelAccum = 0;
+  let libraryWheelLocked = false;
+  albumCarouselStage.addEventListener('wheel', e => {
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 2) return;
+    e.preventDefault();
+    if (libraryWheelLocked) return;
+    libraryWheelAccum += delta;
+    const threshold = 55;
+    if (Math.abs(libraryWheelAccum) > threshold){
+      setLibraryCarouselIndex(libraryCarouselIndex + (libraryWheelAccum > 0 ? 1 : -1));
+      libraryWheelAccum = 0;
+      libraryWheelLocked = true;
+      setTimeout(() => { libraryWheelLocked = false; }, 300);
+    }
+  }, { passive: false });
+
   function openAlbum(ids){
     queue = ids.slice();
     pos = 0;
