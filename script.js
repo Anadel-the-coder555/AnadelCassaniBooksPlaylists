@@ -1254,6 +1254,19 @@
     const uid = 'plr' + Math.abs(seed) + uidSuffix;
     if (song.image){
       imgEl.style.display = 'block';
+      // Seed a placeholder palette immediately, synchronously — before the
+      // image has even started loading. Without this, a song whose photo is
+      // still mid-fetch has no palette at all yet, so renderPlayerCarousel's
+      // "only apply if we already have one" check finds nothing and leaves
+      // the background frozen on whatever the previous song's was. If the
+      // user navigates on before the real photo finishes loading (easy to do
+      // — network fetches are never instant), that song's real-color update
+      // gets silently dropped too, since it only applies if this is *still*
+      // the current song when the image resolves. Net effect without this:
+      // the background can lag several songs behind on a fresh album open.
+      // This placeholder guarantees an immediate, never-stuck update on every
+      // navigation, which the real extracted colors then seamlessly replace.
+      setSongPaletteFromSeed(song);
       // Try CORS mode first so the canvas isn't tainted and the real palette can be
       // sampled; a host that doesn't send CORS headers (e.g. some Dropbox links)
       // fails to load in that mode, so retry once without it — the photo still has
