@@ -1140,7 +1140,7 @@
   // No picture to sample from — fall back to a moody dark gradient in the same
   // hue family as this song's generated skyline art, instead of a pastel one,
   // so the "no cover" case still matches the app's default dark theme.
-  function setSongPaletteFromSeed(song){
+  function setSongPaletteFromSeed(song, instant){
     const seed = hashStr(String(song.id));
     const rnd = mulberry32(seed * 977 + 13);
     const hue = 250 + Math.floor(rnd() * 70);
@@ -1149,7 +1149,7 @@
       bg2: `hsl(${(hue + 300) % 360}, 24%, 8%)`,
       useDarkText: false
     });
-    if (queue[pos] === song.id) applyPlayerBackground(song);
+    if (queue[pos] === song.id) applyPlayerBackground(song, instant);
   }
 
   // Samples the loaded cover image on an offscreen canvas to pull its palette. Falls back
@@ -1225,9 +1225,16 @@
     if (queue[pos] === song.id) applyPlayerBackground(song);
   }
 
-  function applyPlayerBackground(song){
+  function applyPlayerBackground(song, instant){
     const p = songPalette.get(song.id);
     if (!p) return;
+    // A temporary seed placeholder snaps in instantly (no transition) so it
+    // never plays its own fade — only the real extracted color, applied
+    // afterward with the normal transition, should visibly animate in.
+    // Without this, switching songs showed a fade-to-wrong-color-then-
+    // fade-to-right-color double animation, which read as the background
+    // "skipping" even though it was never actually stuck.
+    if (instant) playerView.classList.add('palette-instant');
     playerView.style.background = `linear-gradient(135deg, ${p.bg1}, ${p.bg2})`;
     // The wave's fill comes from these same two colors (see
     // .player-carousel-wave path in styles.css), not a generic theme accent —
@@ -1236,6 +1243,10 @@
     playerView.style.setProperty('--pl-wave-a', p.bg1);
     playerView.style.setProperty('--pl-wave-b', p.bg2);
     playerView.classList.toggle('light', p.useDarkText);
+    if (instant){
+      void playerView.offsetHeight;
+      playerView.classList.remove('palette-instant');
+    }
   }
 
   function buildPlayerCarouselItemEl(song, uidSuffix){
@@ -1266,7 +1277,7 @@
       // the background can lag several songs behind on a fresh album open.
       // This placeholder guarantees an immediate, never-stuck update on every
       // navigation, which the real extracted colors then seamlessly replace.
-      setSongPaletteFromSeed(song);
+      setSongPaletteFromSeed(song, true);
       // Try CORS mode first so the canvas isn't tainted and the real palette can be
       // sampled; a host that doesn't send CORS headers (e.g. some Dropbox links)
       // fails to load in that mode, so retry once without it — the photo still has

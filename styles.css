@@ -400,6 +400,10 @@ body{
   transition:background 700ms ease;
   box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,169,97,0.15);
 }
+.player.palette-instant,
+.player.palette-instant *{
+  transition:none !important;
+}
 .player.light{
   --pl-fg:var(--ink);
   --pl-fg-dim:var(--ink-soft);
