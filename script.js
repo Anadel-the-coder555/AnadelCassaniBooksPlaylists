@@ -1268,8 +1268,8 @@
         : avg;
 
       if (myToken !== backdropToken) return; // a newer song has since taken over
-      playerView.style.setProperty('--pl-wave-a', mixToPastel(avg, 0.35));
-      playerView.style.setProperty('--pl-wave-b', mixToPastel(accent, 0.45));
+      playerView.style.setProperty('--pl-wave-a', mixToPastel(avg, 0.15));
+      playerView.style.setProperty('--pl-wave-b', mixToPastel(accent, 0.2));
     } catch(e){
       // Tainted canvas (CORS) or similar — leave the wave at its fixed fallback color.
     }
